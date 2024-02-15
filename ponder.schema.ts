@@ -8,6 +8,7 @@ export default createSchema((p) => ({
     zchf: p.string(),
     collateral: p.string(),
     price: p.bigint(),
+    created: p.bigint(),
   }),
 
   Challenge: p.createTable({
@@ -42,6 +43,13 @@ export default createSchema((p) => ({
     denyMessage: p.string().optional(),
     denyDate: p.bigint().optional(),
     vetor: p.string().optional(),
+  }),
+
+  Delegation: p.createTable({
+    id: p.string(),
+    owner: p.string(),
+    pureDelegatedFrom: p.string().list(),
+    delegatedTo: p.string().optional(),
   }),
 
   Trade: p.createTable({

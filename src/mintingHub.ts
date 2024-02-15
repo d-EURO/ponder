@@ -12,6 +12,7 @@ ponder.on("MintingHub:PositionOpened", async ({ event, context }) => {
       zchf: event.args.zchf,
       collateral: event.args.collateral,
       price: event.args.price,
+      created: event.block.timestamp,
     },
   });
 });
