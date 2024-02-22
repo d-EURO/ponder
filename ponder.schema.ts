@@ -25,6 +25,12 @@ export default createSchema((p) => ({
     status: p.string(),
   }),
 
+  VotingPower: p.createTable({
+    id: p.string(),
+    address: p.string(),
+    votingPower: p.bigint(),
+  }),
+
   FPS: p.createTable({
     id: p.string(),
     profits: p.bigint(),

@@ -1,7 +1,7 @@
 import { Context, ponder } from "@/generated";
 
 ponder.on("Equity:Trade", async ({ event, context }) => {
-  const { Trade } = context.db;
+  const { Trade, VotingPower } = context.db;
 
   await Trade.create({
     id: event.args.who + "_" + event.block.timestamp.toString(),
@@ -12,6 +12,17 @@ ponder.on("Equity:Trade", async ({ event, context }) => {
       price: event.args.newprice,
       time: event.block.timestamp,
     },
+  });
+
+  await VotingPower.upsert({
+    id: event.args.who,
+    create: {
+      address: event.args.who,
+      votingPower: event.args.amount,
+    },
+    update: ({ current }) => ({
+      votingPower: current.votingPower + event.args.amount,
+    }),
   });
 });
 
