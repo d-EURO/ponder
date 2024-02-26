@@ -1,4 +1,5 @@
 import { Context, ponder } from "@/generated";
+import { zeroAddress } from "viem";
 
 ponder.on("Equity:Trade", async ({ event, context }) => {
   const { Trade, VotingPower } = context.db;
@@ -22,6 +23,30 @@ ponder.on("Equity:Trade", async ({ event, context }) => {
     },
     update: ({ current }) => ({
       votingPower: current.votingPower + event.args.amount,
+    }),
+  });
+});
+
+ponder.on("Equity:Transfer", async ({ event, context }) => {
+  const { VotingPower } = context.db;
+
+  if (event.args.from == zeroAddress || event.args.to == zeroAddress) return;
+
+  await VotingPower.update({
+    id: event.args.from,
+    data: ({ current }) => ({
+      votingPower: current.votingPower - event.args.value,
+    }),
+  });
+
+  await VotingPower.upsert({
+    id: event.args.to,
+    create: {
+      address: event.args.to,
+      votingPower: event.args.value,
+    },
+    update: ({ current }) => ({
+      votingPower: current.votingPower + event.args.value,
     }),
   });
 });
