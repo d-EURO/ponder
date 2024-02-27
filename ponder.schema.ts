@@ -9,6 +9,7 @@ export default createSchema((p) => ({
     collateral: p.string(),
     price: p.bigint(),
     created: p.bigint(),
+    limitForClones: p.bigint(),
   }),
 
   Challenge: p.createTable({

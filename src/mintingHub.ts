@@ -1,11 +1,35 @@
 import { ponder } from "@/generated";
-import { Position } from "../abis/Position";
+import { Position as PositionABI } from "../abis/Position";
 
 ponder.on("MintingHub:PositionOpened", async ({ event, context }) => {
+  const { client } = context;
   const { Position } = context.db;
 
+  const limitForClones = await client.readContract({
+    abi: PositionABI,
+    address: event.args.position,
+    functionName: "limitForClones",
+  });
+
+  if (event.transaction.input.includes("0x5cb47919")) {
+    // Cloning, Update original positions limit
+    const originalPosition = event.transaction.input.slice(34, 74);
+
+    const originalLimitForClones = await client.readContract({
+      abi: PositionABI,
+      address: `0x${originalPosition}`,
+      functionName: "limitForClones",
+    });
+
+    await Position.update({
+      id: `0x${originalPosition.toLowerCase()}`,
+      data: {
+        limitForClones: originalLimitForClones,
+      },
+    });
+  }
   await Position.create({
-    id: event.log.id,
+    id: event.args.position.toLowerCase(),
     data: {
       position: event.args.position,
       owner: event.args.owner,
@@ -13,6 +37,7 @@ ponder.on("MintingHub:PositionOpened", async ({ event, context }) => {
       collateral: event.args.collateral,
       price: event.args.price,
       created: event.block.timestamp,
+      limitForClones,
     },
   });
 });
@@ -30,7 +55,7 @@ ponder.on("MintingHub:ChallengeStarted", async ({ event, context }) => {
   });
 
   const period = await client.readContract({
-    abi: Position,
+    abi: PositionABI,
     address: event.args.position,
     functionName: "challengePeriod",
   });
