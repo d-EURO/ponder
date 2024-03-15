@@ -67,4 +67,10 @@ export default createSchema((p) => ({
     price: p.bigint(),
     time: p.bigint(),
   }),
+
+  TradeChart: p.createTable({
+    id: p.string(),
+    time: p.bigint(),
+    lastPrice: p.bigint(),
+  }),
 }));

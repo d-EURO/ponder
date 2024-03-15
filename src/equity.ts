@@ -2,7 +2,7 @@ import { Context, ponder } from "@/generated";
 import { zeroAddress } from "viem";
 
 ponder.on("Equity:Trade", async ({ event, context }) => {
-  const { Trade, VotingPower } = context.db;
+  const { Trade, VotingPower, TradeChart } = context.db;
 
   await Trade.create({
     id: event.args.who + "_" + event.block.timestamp.toString(),
@@ -23,6 +23,18 @@ ponder.on("Equity:Trade", async ({ event, context }) => {
     },
     update: ({ current }) => ({
       votingPower: current.votingPower + event.args.amount,
+    }),
+  });
+
+  const startTime = (event.block.timestamp / 86400n) * 86400n;
+  await TradeChart.upsert({
+    id: startTime.toString(),
+    create: {
+      time: startTime,
+      lastPrice: event.args.newprice,
+    },
+    update: ({ current }) => ({
+      lastPrice: event.args.newprice,
     }),
   });
 });
