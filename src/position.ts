@@ -23,3 +23,19 @@ ponder.on("Position:MintingUpdate", async ({ event, context }) => {
     });
   }
 });
+
+ponder.on("Position:OwnershipTransferred", async ({ event, context }) => {
+  const { Position } = context.db;
+
+  const position = await Position.findUnique({
+    id: event.log.address.toLowerCase(),
+  });
+  if (position) {
+    await Position.update({
+      id: event.log.address.toLowerCase(),
+      data: {
+        owner: event.args.newOwner,
+      },
+    });
+  }
+});
