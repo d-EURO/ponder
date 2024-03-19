@@ -20,53 +20,59 @@
     ansi-styles "^6.2.1"
     is-fullwidth-code-point "^4.0.0"
 
-"@ast-grep/napi-darwin-arm64@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi-darwin-arm64/-/napi-darwin-arm64-0.17.1.tgz#3ee0304a3611e615a405eb1bea8cabaf5bacae06"
-  integrity sha512-QO5EyZLXUyJyyS1Q/IQyllayDVb2zgWyWEWhl//B8Y8iuXYEPPj3eIbqVyo3zhgEDLgtd8RZOipgWJLQTmKJPw==
+"@ast-grep/napi-darwin-arm64@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-darwin-arm64/-/napi-darwin-arm64-0.19.4.tgz#d7ee7c0363af8bdd9792ab9332c4ed8f67624e9e"
+  integrity sha512-tZUCBZuP0jFkdNHuEbjJD6KgPe15CEMrA5bAl3W2zyo/QiwNStHqDekgWgwLY46ct/Y2BQaTjuvSDy0Ze651gg==
 
-"@ast-grep/napi-darwin-x64@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi-darwin-x64/-/napi-darwin-x64-0.17.1.tgz#3cad2110d55711954472fda682fa825349050617"
-  integrity sha512-vaZUNCaDdNDwe6lEmyRF89omtItm4dAFJvCEXUzpcVF7aX5eKg/8sj176gDPLkErNcE5Eqenc9+2aSFc2ppWhw==
+"@ast-grep/napi-darwin-x64@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-darwin-x64/-/napi-darwin-x64-0.19.4.tgz#5b34af7da4407ae1e088db94aed0115c4fc58b72"
+  integrity sha512-GBT+LFRaSrUz897C2XlLrnEp6mI6kYpkzaQRncERbWMiuH9gWiBc1r5GLJVEqFLssnC+e9e6FLnI3PrcnEGf1w==
 
-"@ast-grep/napi-linux-arm64-gnu@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi-linux-arm64-gnu/-/napi-linux-arm64-gnu-0.17.1.tgz#62689e1ce5505466aa9156c30753678d15fe2d33"
-  integrity sha512-vSidne672ClHpTtkv+d6F+Vit6rvPOPpwFvrsmf/SJnIUZr2PXbdp2z1zxUy0w+41LIMEPdWd99wmiCbBFWAGg==
+"@ast-grep/napi-linux-arm64-gnu@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-linux-arm64-gnu/-/napi-linux-arm64-gnu-0.19.4.tgz#368ae9d8e13f0470d26e6ae128812895fa340332"
+  integrity sha512-xwtuUurvz1np3YIdljuCKOPH0bLtHK7Fs70nT+HDl7sUEo/7a8mp3EOmuLgviB6GIpOx/Lzbptp+d1EYW4eUIw==
 
-"@ast-grep/napi-linux-x64-gnu@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi-linux-x64-gnu/-/napi-linux-x64-gnu-0.17.1.tgz#06d1fe04f6fda53a7a7d7c0ae4462a54371ea64a"
-  integrity sha512-njoCGNqpg2cVTNPvjq2Jp8bT30x6EGd/Bl8hzAJTHo9KYDTYGPmdGdr3TVOoUcSgsIqiveNFZ5yaVg8pNez7uA==
+"@ast-grep/napi-linux-x64-gnu@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-linux-x64-gnu/-/napi-linux-x64-gnu-0.19.4.tgz#1283d72286aee3ebac8020c2e11bff82651c7923"
+  integrity sha512-NDtmg7Zp7zxUhJ1mpOpeAshI5SJhIRlOnBncAWqb+LgzwHafXBLGXnCQ5GNU6xcOyhZRDS2OpPSIhd1E+ztTTw==
 
-"@ast-grep/napi-win32-arm64-msvc@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi-win32-arm64-msvc/-/napi-win32-arm64-msvc-0.17.1.tgz#5a9864592674f307e7820bbca45a021bc007e3c0"
-  integrity sha512-LhFRY7Vl8tCM93RqDdCO5tpseVFwoZKfoNyLF2zBwKi/fOfZ+g0iMlhpaFU6vtlGq1MECUxtZTK80NQr7HIcCA==
+"@ast-grep/napi-linux-x64-musl@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-linux-x64-musl/-/napi-linux-x64-musl-0.19.4.tgz#ada30e625d32e7c2257225da2603038681a94a75"
+  integrity sha512-Xgd4CFIugfbdoyN0pYWEwhbdq9EK9y2yGjxXNRs4raW91b6Vdc+140FsBJgWeO1/ek1f5zOzOguJh+L5fuBynQ==
 
-"@ast-grep/napi-win32-ia32-msvc@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi-win32-ia32-msvc/-/napi-win32-ia32-msvc-0.17.1.tgz#f8ba521554802d3005b602b1e2ee4779d21799c6"
-  integrity sha512-UmnekTcxUPxIhZdR8AxABuxkgIYCd+uKAMg0PcumwTLstbXVC3wWpNe93wDpioRV7hgG/W8hxH+9cs4m9E2f5w==
+"@ast-grep/napi-win32-arm64-msvc@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-win32-arm64-msvc/-/napi-win32-arm64-msvc-0.19.4.tgz#835abf6b0d91e4c79015f21dc6a9708a9d359ab3"
+  integrity sha512-gZpq5dSEObJJLY9Vd3oDc3FtsvLAKjc7XS2X2c9trjHZ64KTt9t59SKG8bvBcAe5mqejPWjnWJYdIh7wQLgRZA==
 
-"@ast-grep/napi-win32-x64-msvc@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi-win32-x64-msvc/-/napi-win32-x64-msvc-0.17.1.tgz#b264ba905865e63e1235e2f7dcfb52b4ab8ac079"
-  integrity sha512-3YpFwuDaMXSE29wxUNfik1sY8NTgzlAzCCyiD654T+ZjBGXAr+9XlIx1Sp0qjMjoQeVAxhg48RnzZZDs8fWpPA==
+"@ast-grep/napi-win32-ia32-msvc@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-win32-ia32-msvc/-/napi-win32-ia32-msvc-0.19.4.tgz#6cdb065a751afb66fe69c899e32ad7d4dfed43dd"
+  integrity sha512-kSqYHfsd8yfMkLJU6R8iJyJ/APsmm/8TEUcAOcaFR2TY26eFPNKhF4cDxVs7ZFsRLFItHlT4mj6b8VJn4lXPWA==
 
-"@ast-grep/napi@^0.17.1":
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/@ast-grep/napi/-/napi-0.17.1.tgz#43e747d9896d42db804d5e1fff7bf07a8b516bf4"
-  integrity sha512-IxCE3wSIKpyR3cJIkfwMfDeNf6e+R4X2pw9X5kc8OrCCmvrNfHfvWtmVqBZOREd7peshvkB/yi9jTx31VklQGw==
+"@ast-grep/napi-win32-x64-msvc@0.19.4":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi-win32-x64-msvc/-/napi-win32-x64-msvc-0.19.4.tgz#ba12727853c14aaca2fbf0fb8210b088ee7ca082"
+  integrity sha512-Dh9AKWk5AoxLgeQxiJCSTHFlagS/SMznaLv7Q0RyalXoOzZSdMBtJ345tYRbISKubMg3uO7PWu4vrQN1EvPqMg==
+
+"@ast-grep/napi@^0.19.3":
+  version "0.19.4"
+  resolved "https://registry.yarnpkg.com/@ast-grep/napi/-/napi-0.19.4.tgz#34d495a3e2c3cb097a80e017bd7f613f683681ce"
+  integrity sha512-Lv68h2sePJApz7LkOJ4S6lUQgI5L28BDfbzeyK6BeU3t9Df6AbqiwWfAxc1C6vbUcRDv+AH3t0+eI+iLFBhoTw==
   optionalDependencies:
-    "@ast-grep/napi-darwin-arm64" "0.17.1"
-    "@ast-grep/napi-darwin-x64" "0.17.1"
-    "@ast-grep/napi-linux-arm64-gnu" "0.17.1"
-    "@ast-grep/napi-linux-x64-gnu" "0.17.1"
-    "@ast-grep/napi-win32-arm64-msvc" "0.17.1"
-    "@ast-grep/napi-win32-ia32-msvc" "0.17.1"
-    "@ast-grep/napi-win32-x64-msvc" "0.17.1"
+    "@ast-grep/napi-darwin-arm64" "0.19.4"
+    "@ast-grep/napi-darwin-x64" "0.19.4"
+    "@ast-grep/napi-linux-arm64-gnu" "0.19.4"
+    "@ast-grep/napi-linux-x64-gnu" "0.19.4"
+    "@ast-grep/napi-linux-x64-musl" "0.19.4"
+    "@ast-grep/napi-win32-arm64-msvc" "0.19.4"
+    "@ast-grep/napi-win32-ia32-msvc" "0.19.4"
+    "@ast-grep/napi-win32-x64-msvc" "0.19.4"
 
 "@babel/code-frame@^7.23.4":
   version "7.23.5"
@@ -321,19 +327,21 @@
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
-"@ponder/core@^0.2.5":
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/@ponder/core/-/core-0.2.5.tgz#2122ca5bdc3f87691728038ea32469d4f9da9efa"
-  integrity sha512-My+cVl1rPItgbUhlJOJElEY7UvZjxXGQqTVWQzsveQHO6nLzID2HSzwc9pYQ4jpPcoNy58fTu8MPrXQn24CZtA==
+"@ponder/core@^0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@ponder/core/-/core-0.3.4.tgz#c8b1b36619441a58cacab1ef83f91bb7e3c4c9ca"
+  integrity sha512-030AB9vQ7eSdtk1LMO2LouBuyTsl70q+m0ltWEG7kkpuBGVchDyxlIVOT2dy4ObdcT+L7dSJ0v5P+WEwVy7nrg==
   dependencies:
-    "@ast-grep/napi" "^0.17.1"
+    "@ast-grep/napi" "^0.19.3"
     "@babel/code-frame" "^7.23.4"
+    "@ponder/utils" "0.1.1"
     abitype "^0.10.2"
     async-mutex "^0.4.0"
     better-sqlite3 "^9.1.1"
     cac "^6.7.14"
     conf "^12.0.0"
     cors "^2.8.5"
+    dataloader "^2.2.2"
     detect-package-manager "^3.0.1"
     dotenv "^16.3.1"
     emittery "^1.0.1"
@@ -346,9 +354,9 @@
     ink "^4.4.1"
     kysely "^0.26.3"
     magic-string "^0.30.5"
-    p-limit "^5.0.0"
     p-queue "^7.4.1"
     pg "^8.11.3"
+    pg-connection-string "^2.6.2"
     picocolors "^1.0.0"
     pino "^8.16.2"
     prom-client "^15.0.0"
@@ -358,6 +366,11 @@
     vite "^5.0.7"
     vite-node "^1.0.2"
     vite-tsconfig-paths "^4.3.1"
+
+"@ponder/utils@0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@ponder/utils/-/utils-0.1.1.tgz#2e20ca3dc05bdc3630a067755c152a13e13fe405"
+  integrity sha512-BheJRB5vCl++TLgN9W6+rySbyBHxUzN+p1CR/KySrhErdaIrU5AiXtdMCUE0X7bvMVpY8meFQRBW3n8mUdg5KQ==
 
 "@rollup/rollup-android-arm-eabi@4.10.0":
   version "4.10.0"
@@ -463,10 +476,10 @@
   resolved "https://registry.yarnpkg.com/@ungap/structured-clone/-/structured-clone-1.2.0.tgz#756641adb587851b5ccb3e095daf27ae581c8406"
   integrity sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==
 
-abitype@0.9.8:
-  version "0.9.8"
-  resolved "https://registry.yarnpkg.com/abitype/-/abitype-0.9.8.tgz#1f120b6b717459deafd213dfbf3a3dd1bf10ae8c"
-  integrity sha512-puLifILdm+8sjyss4S+fsUN09obiT1g2YW6CtcQF+QDzxR0euzgEB29MZujC6zMk2a6SVmtttq1fc6+YFA7WYQ==
+abitype@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/abitype/-/abitype-1.0.0.tgz#237176dace81d90d018bebf3a45cb42f2a2d9e97"
+  integrity sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==
 
 abitype@^0.10.2:
   version "0.10.3"
@@ -866,6 +879,11 @@ cross-spawn@^7.0.0, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
     path-key "^3.1.0"
     shebang-command "^2.0.0"
     which "^2.0.1"
+
+dataloader@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/dataloader/-/dataloader-2.2.2.tgz#216dc509b5abe39d43a9b9d97e6e5e473dfbe3e0"
+  integrity sha512-8YnDaaf7N3k/q5HnTJVuzSyLETjoZjVmHc4AeKAzOvKHEFQKcn64OKBfzHYtE9zGjctNM7V9I0MfnUVLpi7M5g==
 
 debounce-fn@^5.1.2:
   version "5.1.2"
@@ -1962,13 +1980,6 @@ p-limit@^3.0.2:
   dependencies:
     yocto-queue "^0.1.0"
 
-p-limit@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/p-limit/-/p-limit-5.0.0.tgz#6946d5b7140b649b7a33a027d89b4c625b3a5985"
-  integrity sha512-/Eaoq+QyLSiXQ4lyYV23f14mZRQcXnxfHrN0vCai+ak9G0pp9iEQukIIZq5NccEvwRB8PUnZT0KsOoDCINS1qQ==
-  dependencies:
-    yocto-queue "^1.0.0"
-
 p-locate@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/p-locate/-/p-locate-5.0.0.tgz#83c8315c6785005e3bd021839411c9e110e6d834"
@@ -2578,6 +2589,7 @@ statuses@2.0.1:
   integrity sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==
 
 "string-width-cjs@npm:string-width@^4.2.0", string-width@^4.1.0:
+  name string-width-cjs
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -2603,6 +2615,7 @@ string_decoder@^1.1.1, string_decoder@^1.3.0:
     safe-buffer "~5.2.0"
 
 "strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+  name strip-ansi-cjs
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -2794,17 +2807,17 @@ vary@^1, vary@~1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
-viem@^1.19.9:
-  version "1.21.4"
-  resolved "https://registry.yarnpkg.com/viem/-/viem-1.21.4.tgz#883760e9222540a5a7e0339809202b45fe6a842d"
-  integrity sha512-BNVYdSaUjeS2zKQgPs+49e5JKocfo60Ib2yiXOWBT6LuVxY1I/6fFX3waEtpXvL1Xn4qu+BVitVtMh9lyThyhQ==
+viem@^2.8.12:
+  version "2.8.12"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-2.8.12.tgz#93d321322cb41b34030ee97835d5bc342cd60931"
+  integrity sha512-+4kC6ZEbvI8te8OZuetrzvGKdM2+6VCRaD+8xYSng/wrFpUvLdgLec7A1JkOVWzuKwMvhX+KNHsXITSGV7WTlA==
   dependencies:
     "@adraffy/ens-normalize" "1.10.0"
     "@noble/curves" "1.2.0"
     "@noble/hashes" "1.3.2"
     "@scure/bip32" "1.3.2"
     "@scure/bip39" "1.2.1"
-    abitype "0.9.8"
+    abitype "1.0.0"
     isows "1.0.3"
     ws "8.13.0"
 
@@ -2905,11 +2918,6 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
-
-yocto-queue@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-1.0.0.tgz#7f816433fb2cbc511ec8bf7d263c3b58a1a3c251"
-  integrity sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==
 
 yoga-wasm-web@~0.3.3:
   version "0.3.3"
