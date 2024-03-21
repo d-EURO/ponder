@@ -38,6 +38,7 @@ ponder.on("MintingHub:PositionOpened", async ({ event, context }) => {
       price: event.args.price,
       created: event.block.timestamp,
       limitForClones,
+      denied: false,
     },
   });
 });

@@ -10,6 +10,7 @@ export default createSchema((p) => ({
     price: p.bigint(),
     created: p.bigint(),
     limitForClones: p.bigint(),
+    denied: p.boolean(),
   }),
 
   Challenge: p.createTable({
