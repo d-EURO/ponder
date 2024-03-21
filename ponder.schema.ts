@@ -11,6 +11,7 @@ export default createSchema((p) => ({
     created: p.bigint(),
     limitForClones: p.bigint(),
     denied: p.boolean(),
+    closed: p.boolean(),
   }),
 
   Challenge: p.createTable({

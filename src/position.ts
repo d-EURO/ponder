@@ -19,6 +19,8 @@ ponder.on("Position:MintingUpdate", async ({ event, context }) => {
       id: event.log.address.toLowerCase(),
       data: {
         limitForClones: originalLimitForClones,
+        price: event.args.price,
+        closed: event.args.collateral == 0n,
       },
     });
   }
