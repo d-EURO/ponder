@@ -3,7 +3,7 @@ import { Position as PositionABI } from "../abis/Position";
 
 ponder.on("Position:MintingUpdate", async ({ event, context }) => {
   const { client } = context;
-  const { Position } = context.db;
+  const { Position, ActiveUser } = context.db;
 
   const originalLimitForClones = await client.readContract({
     abi: PositionABI,
@@ -24,10 +24,19 @@ ponder.on("Position:MintingUpdate", async ({ event, context }) => {
       },
     });
   }
+  await ActiveUser.upsert({
+    id: event.transaction.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });
 
 ponder.on("Position:PositionDenied", async ({ event, context }) => {
-  const { Position } = context.db;
+  const { Position, ActiveUser } = context.db;
 
   const position = await Position.findUnique({
     id: event.log.address.toLowerCase(),
@@ -40,10 +49,19 @@ ponder.on("Position:PositionDenied", async ({ event, context }) => {
       },
     });
   }
+  await ActiveUser.upsert({
+    id: event.transaction.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });
 
 ponder.on("Position:OwnershipTransferred", async ({ event, context }) => {
-  const { Position } = context.db;
+  const { Position, ActiveUser } = context.db;
 
   const position = await Position.findUnique({
     id: event.log.address.toLowerCase(),
@@ -56,4 +74,13 @@ ponder.on("Position:OwnershipTransferred", async ({ event, context }) => {
       },
     });
   }
+  await ActiveUser.upsert({
+    id: event.transaction.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });

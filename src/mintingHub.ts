@@ -3,7 +3,7 @@ import { Position as PositionABI } from "../abis/Position";
 
 ponder.on("MintingHub:PositionOpened", async ({ event, context }) => {
   const { client } = context;
-  const { Position } = context.db;
+  const { Position, ActiveUser } = context.db;
 
   const limitForClones = await client.readContract({
     abi: PositionABI,
@@ -42,11 +42,21 @@ ponder.on("MintingHub:PositionOpened", async ({ event, context }) => {
       closed: false,
     },
   });
+
+  await ActiveUser.upsert({
+    id: event.transaction.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });
 
 ponder.on("MintingHub:ChallengeStarted", async ({ event, context }) => {
   const { client } = context;
-  const { Challenge } = context.db;
+  const { Challenge, ActiveUser } = context.db;
   const { MintingHub } = context.contracts;
 
   const challenges = await client.readContract({
@@ -77,11 +87,20 @@ ponder.on("MintingHub:ChallengeStarted", async ({ event, context }) => {
       status: "Active",
     },
   });
+  await ActiveUser.upsert({
+    id: event.transaction.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });
 
 ponder.on("MintingHub:ChallengeAverted", async ({ event, context }) => {
   const { client } = context;
-  const { Challenge } = context.db;
+  const { Challenge, ActiveUser } = context.db;
   const { MintingHub } = context.contracts;
 
   const challenges = await client.readContract({
@@ -100,11 +119,20 @@ ponder.on("MintingHub:ChallengeAverted", async ({ event, context }) => {
       status: challenges[3] === 0n ? "Success" : current.status,
     }),
   });
+  await ActiveUser.upsert({
+    id: event.transaction.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });
 
 ponder.on("MintingHub:ChallengeSucceeded", async ({ event, context }) => {
   const { client } = context;
-  const { Challenge } = context.db;
+  const { Challenge, ActiveUser } = context.db;
   const { MintingHub } = context.contracts;
 
   const challenges = await client.readContract({
@@ -124,6 +152,15 @@ ponder.on("MintingHub:ChallengeSucceeded", async ({ event, context }) => {
         current.acquiredCollateral + event.args.acquiredCollateral,
       filledSize: current.filledSize + event.args.challengeSize,
       status: challenges[3] === 0n ? "Success" : current.status,
+    }),
+  });
+  await ActiveUser.upsert({
+    id: event.transaction.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
     }),
   });
 });

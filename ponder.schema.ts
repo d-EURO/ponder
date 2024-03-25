@@ -75,4 +75,9 @@ export default createSchema((p) => ({
     time: p.bigint(),
     lastPrice: p.bigint(),
   }),
+
+  ActiveUser: p.createTable({
+    id: p.string(),
+    lastActiveTime: p.bigint(),
+  }),
 }));

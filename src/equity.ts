@@ -2,7 +2,7 @@ import { Context, ponder } from "@/generated";
 import { zeroAddress } from "viem";
 
 ponder.on("Equity:Trade", async ({ event, context }) => {
-  const { Trade, VotingPower, TradeChart } = context.db;
+  const { Trade, VotingPower, TradeChart, ActiveUser } = context.db;
 
   await Trade.create({
     id: event.args.who + "_" + event.block.timestamp.toString(),
@@ -37,10 +37,20 @@ ponder.on("Equity:Trade", async ({ event, context }) => {
       lastPrice: event.args.newprice,
     }),
   });
+
+  await ActiveUser.upsert({
+    id: event.args.who,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });
 
 ponder.on("Equity:Transfer", async ({ event, context }) => {
-  const { VotingPower } = context.db;
+  const { VotingPower, ActiveUser } = context.db;
 
   if (event.args.from == zeroAddress || event.args.to == zeroAddress) return;
 
@@ -59,6 +69,25 @@ ponder.on("Equity:Transfer", async ({ event, context }) => {
     },
     update: ({ current }) => ({
       votingPower: current.votingPower + event.args.value,
+    }),
+  });
+
+  await ActiveUser.upsert({
+    id: event.args.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
+  await ActiveUser.upsert({
+    id: event.args.to,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
     }),
   });
 });
@@ -113,7 +142,7 @@ ponder.on("Equity:Delegation", async ({ event, context }) => {
     }
   };
 
-  const { Delegation } = context.db;
+  const { Delegation, ActiveUser } = context.db;
   const delegation = await Delegation.upsert({
     id: event.args.from,
     create: {
@@ -134,4 +163,14 @@ ponder.on("Equity:Delegation", async ({ event, context }) => {
   });
 
   addParentDelegation(event.args.to, arrayToUpdate);
+
+  await ActiveUser.upsert({
+    id: event.args.from,
+    create: {
+      lastActiveTime: event.block.timestamp,
+    },
+    update: () => ({
+      lastActiveTime: event.block.timestamp,
+    }),
+  });
 });
