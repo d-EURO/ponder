@@ -77,8 +77,7 @@ export default createSchema((p) => ({
 	Delegation: p.createTable({
 		id: p.string(),
 		owner: p.string(),
-		pureDelegatedFrom: p.string().list(),
-		delegatedTo: p.string().optional(),
+		delegatedTo: p.string(),
 	}),
 
 	Trade: p.createTable({

@@ -92,77 +92,27 @@ ponder.on('Equity:Transfer', async ({ event, context }) => {
 	});
 });
 
-// FIXME: Ponder gets stuck, no error, process gets stuck, somewhere here...
-// ponder.on('Equity:Delegation', async ({ event, context }) => {
-// 	const addParentDelegation = async (delegatedFrom: string | undefined, arrayToAdd: string[]) => {
-// 		if (!delegatedFrom) return;
+ponder.on('Equity:Delegation', async ({ event, context }) => {
+	const { Delegation, ActiveUser } = context.db;
 
-// 		const parentDelegation = await Delegation.upsert({
-// 			id: delegatedFrom,
-// 			create: {
-// 				owner: delegatedFrom,
-// 				pureDelegatedFrom: arrayToAdd,
-// 			},
-// 			update: ({ current }) => ({
-// 				pureDelegatedFrom: current.pureDelegatedFrom.concat(
-// 					arrayToAdd.filter((item) => current.pureDelegatedFrom.indexOf(item) < 0)
-// 				),
-// 			}),
-// 		});
+	await Delegation.upsert({
+		id: event.args.from,
+		create: {
+			owner: event.args.from,
+			delegatedTo: event.args.to,
+		},
+		update: {
+			delegatedTo: event.args.to,
+		},
+	});
 
-// 		addParentDelegation(parentDelegation.delegatedTo, arrayToAdd);
-// 	};
-
-// 	const removeParentDelegation = async (delegationTo: string | undefined, arrayToRemove: string[]) => {
-// 		if (!delegationTo) return;
-
-// 		const parentDelegation = await Delegation.findUnique({ id: delegationTo });
-// 		if (parentDelegation) {
-// 			const pureDelegatedFrom: string[] = [];
-// 			for (const delegatedFrom of parentDelegation.pureDelegatedFrom) {
-// 				if (!arrayToRemove.includes(delegatedFrom)) pureDelegatedFrom.push(delegatedFrom);
-// 			}
-
-// 			await Delegation.update({
-// 				id: delegationTo,
-// 				data: {
-// 					pureDelegatedFrom,
-// 				},
-// 			});
-
-// 			removeParentDelegation(parentDelegation.delegatedTo, arrayToRemove);
-// 		}
-// 	};
-
-// 	const { Delegation, ActiveUser } = context.db;
-// 	const delegation = await Delegation.upsert({
-// 		id: event.args.from,
-// 		create: {
-// 			owner: event.args.from,
-// 			pureDelegatedFrom: [],
-// 		},
-// 		update: {},
-// 	});
-
-// 	const arrayToUpdate = [event.args.from];
-// 	removeParentDelegation(delegation.delegatedTo, arrayToUpdate);
-
-// 	await Delegation.update({
-// 		id: event.args.from,
-// 		data: {
-// 			delegatedTo: event.args.to,
-// 		},
-// 	});
-
-// 	addParentDelegation(event.args.to, arrayToUpdate);
-
-// 	await ActiveUser.upsert({
-// 		id: event.args.from,
-// 		create: {
-// 			lastActiveTime: event.block.timestamp,
-// 		},
-// 		update: () => ({
-// 			lastActiveTime: event.block.timestamp,
-// 		}),
-// 	});
-// });
+	await ActiveUser.upsert({
+		id: event.args.from,
+		create: {
+			lastActiveTime: event.block.timestamp,
+		},
+		update: () => ({
+			lastActiveTime: event.block.timestamp,
+		}),
+	});
+});
