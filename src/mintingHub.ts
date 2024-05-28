@@ -124,6 +124,12 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 		functionName: 'minted',
 	});
 
+	const cooldown = await client.readContract({
+		abi: PositionABI,
+		address: event.args.position,
+		functionName: 'cooldown',
+	});
+
 	// ------------------------------------------------------------------
 	// CALC VALUES
 	// const priceAdjusted = price / BigInt(10 ** (36 - collateralDecimals));
@@ -180,6 +186,7 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 			annualInterestPPM,
 			reserveContribution,
 			start,
+			cooldown,
 			expiration,
 			challengePeriod,
 
