@@ -111,12 +111,12 @@ function notifyChallengeAverted(uint256 size) external onlyHub {
 
 2. [ ] \_close (update)
 
-    - [ ] MintingHub:ChallengeAverted
-    - [ ] Position:MintingUpdate
-    - [ ] Position:PositionDenied
+    - [x] MintingHub:ChallengeAverted
+    - [x] Position:MintingUpdate
+    - [x] Position:PositionDenied
 
 3. [ ] \_restrictMinting (update)
 
     - [ ] Position:MintingUpdate
-    - [ ] MintingHub:ChallengeAverted
-    - [ ] MintingHub:ChallengeSucceeded
+    - [x] MintingHub:ChallengeAverted
+    - [x] MintingHub:ChallengeSucceeded
