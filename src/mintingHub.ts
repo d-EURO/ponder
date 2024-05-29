@@ -124,6 +124,12 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 		functionName: 'minted',
 	});
 
+	const cooldown = await client.readContract({
+		abi: PositionABI,
+		address: event.args.position,
+		functionName: 'cooldown',
+	});
+
 	// ------------------------------------------------------------------
 	// CALC VALUES
 	// const priceAdjusted = price / BigInt(10 ** (36 - collateralDecimals));
@@ -180,6 +186,7 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 			annualInterestPPM,
 			reserveContribution,
 			start,
+			cooldown,
 			expiration,
 			challengePeriod,
 
@@ -257,7 +264,7 @@ ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 
 ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 	const { client } = context;
-	const { Challenge, ActiveUser } = context.db;
+	const { Position, Challenge, ActiveUser } = context.db;
 	const { MintingHub } = context.contracts;
 
 	const challenges = await client.readContract({
@@ -265,6 +272,12 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 		address: MintingHub.address,
 		functionName: 'challenges',
 		args: [event.args.number],
+	});
+
+	const cooldown = await client.readContract({
+		abi: PositionABI,
+		address: event.args.position,
+		functionName: 'cooldown',
 	});
 
 	const challengeId = getChallengeId(event.args.position, event.args.number);
@@ -276,6 +289,12 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 			status: challenges[3] === 0n ? 'Success' : current.status,
 		}),
 	});
+
+	await Position.update({
+		id: event.args.position.toLowerCase(),
+		data: { cooldown },
+	});
+
 	await ActiveUser.upsert({
 		id: event.transaction.from,
 		create: {
@@ -289,7 +308,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 
 ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 	const { client } = context;
-	const { Challenge, ActiveUser } = context.db;
+	const { Position, Challenge, ActiveUser } = context.db;
 	const { MintingHub } = context.contracts;
 
 	const challenges = await client.readContract({
@@ -297,6 +316,12 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 		address: MintingHub.address,
 		functionName: 'challenges',
 		args: [event.args.number],
+	});
+
+	const cooldown = await client.readContract({
+		abi: PositionABI,
+		address: event.args.position,
+		functionName: 'cooldown',
 	});
 
 	const challengeId = getChallengeId(event.args.position, event.args.number);
@@ -310,6 +335,12 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 			status: challenges[3] === 0n ? 'Success' : current.status,
 		}),
 	});
+
+	await Position.update({
+		id: event.args.position.toLowerCase(),
+		data: { cooldown },
+	});
+
 	await ActiveUser.upsert({
 		id: event.transaction.from,
 		create: {
