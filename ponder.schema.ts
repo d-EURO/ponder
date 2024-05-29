@@ -18,7 +18,6 @@ export default createSchema((p) => ({
 		annualInterestPPM: p.int(),
 		reserveContribution: p.int(),
 		start: p.bigint(),
-		cooldown: p.bigint(),
 		expiration: p.bigint(),
 		challengePeriod: p.bigint(),
 		zchfName: p.string(),
