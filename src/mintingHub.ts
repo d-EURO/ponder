@@ -17,43 +17,43 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 	const closed: boolean = false;
 	const denied: boolean = false;
 
-	const original: `0x${string}` = isOriginal ? event.args.position : (`0x${event.transaction.input.slice(34, 74)}` as `0x${string}`);
+	const original: `0x${string}` = isOriginal ? position : (`0x${event.transaction.input.slice(34, 74)}` as `0x${string}`);
 
 	// ------------------------------------------------------------------
 	// CONST
 	const minimumCollateral = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'minimumCollateral',
 	});
 
 	const annualInterestPPM = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'annualInterestPPM',
 	});
 
 	const reserveContribution = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'reserveContribution',
 	});
 
 	const start = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'start',
 	});
 
 	const expiration = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'expiration',
 	});
 
 	const challengePeriod = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'challengePeriod',
 	});
 
@@ -101,26 +101,28 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 		abi: ERC20ABI,
 		address: collateral,
 		functionName: 'balanceOf',
-		args: [event.args.position],
+		args: [position],
 	});
 
 	// ------------------------------------------------------------------
 	// CHANGEABLE
+	// TODO: Keep in mind for developer, "limitForClones" is "limit" from SC
 	const limitForClones = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'limit',
 	});
 
+	// TODO: Keep in mind for developer, "availableForClones" is "limitForClones" from SC
 	const availableForClones = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'limitForClones',
 	});
 
 	const minted = await client.readContract({
 		abi: PositionABI,
-		address: event.args.position,
+		address: position,
 		functionName: 'minted',
 	});
 
@@ -161,7 +163,7 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 	// ------------------------------------------------------------------
 	// Create position entry for DB
 	await Position.create({
-		id: event.args.position.toLowerCase(),
+		id: position.toLowerCase(),
 		data: {
 			position,
 			owner,

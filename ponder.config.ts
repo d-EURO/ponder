@@ -1,52 +1,52 @@
-import { createConfig } from "@ponder/core";
-import { http, parseAbiItem } from "viem";
+import { createConfig } from '@ponder/core';
+import { http, parseAbiItem } from 'viem';
 
-import { Equity } from "./abis/Equity";
-import { MintingHub } from "./abis/MintingHub";
-import { Frankencoin } from "./abis/Frankencoin";
-import { Position } from "./abis/Position";
+import { Equity } from './abis/Equity';
+import { MintingHub } from './abis/MintingHub';
+import { Frankencoin } from './abis/Frankencoin';
+import { Position } from './abis/Position';
 
-const transport = http(process.env.PONDER_RPC_URL_1);
+const transport = http('https://ethereum3.3dotshub.com');
 
 const openPositionEvent = parseAbiItem(
-  "event PositionOpened(address indexed owner,address indexed position,address zchf,address collateral,uint256 price)"
+	'event PositionOpened(address indexed owner,address indexed position,address zchf,address collateral,uint256 price)'
 );
 
 export default createConfig({
-  networks: {
-    mainnet: {
-      chainId: 1,
-      transport,
-    },
-  },
-  contracts: {
-    Frankencoin: {
-      network: "mainnet",
-      abi: Frankencoin,
-      address: "0xB58E61C3098d85632Df34EecfB899A1Ed80921cB",
-      startBlock: 18451518,
-    },
-    Equity: {
-      network: "mainnet",
-      abi: Equity,
-      address: "0x1bA26788dfDe592fec8bcB0Eaff472a42BE341B2",
-      startBlock: 18451518,
-    },
-    MintingHub: {
-      network: "mainnet",
-      abi: MintingHub,
-      address: "0x7546762fdb1a6d9146b33960545C3f6394265219",
-      startBlock: 18451536,
-    },
-    Position: {
-      network: "mainnet",
-      abi: Position,
-      factory: {
-        address: "0x7546762fdb1a6d9146b33960545C3f6394265219",
-        event: openPositionEvent,
-        parameter: "position",
-      },
-      startBlock: 18451536,
-    },
-  },
+	networks: {
+		ethereum3: {
+			chainId: 1337,
+			transport,
+		},
+	},
+	contracts: {
+		Frankencoin: {
+			network: 'ethereum3',
+			abi: Frankencoin,
+			address: '0x4800b6c288e4B2BBa7b2314328DB485F5FfB0414',
+			startBlock: 0,
+		},
+		Equity: {
+			network: 'ethereum3',
+			abi: Equity,
+			address: '0xD47DE3328848cf8fd4079673cA40510536323e59',
+			startBlock: 0,
+		},
+		MintingHub: {
+			network: 'ethereum3',
+			abi: MintingHub,
+			address: '0x60614BE7fD2F92bf96caa61d434a4e04Af6228c3',
+			startBlock: 1400,
+		},
+		Position: {
+			network: 'ethereum3',
+			abi: Position,
+			factory: {
+				address: '0x60614BE7fD2F92bf96caa61d434a4e04Af6228c3',
+				event: openPositionEvent,
+				parameter: 'position',
+			},
+			startBlock: 1400,
+		},
+	},
 });
