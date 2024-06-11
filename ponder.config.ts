@@ -1,52 +1,59 @@
 import { createConfig } from '@ponder/core';
-import { http, parseAbiItem } from 'viem';
+import { Address, http, parseAbiItem } from 'viem';
 
 import { Equity } from './abis/Equity';
 import { MintingHub } from './abis/MintingHub';
 import { Frankencoin } from './abis/Frankencoin';
 import { Position } from './abis/Position';
+import { mainnet } from 'viem/chains';
+import { ADDRESS, ethereum3 } from './ponder.address';
 
-const transport = http('https://ethereum3.3dotshub.com');
+// TODO: >>>>> change chain here <<<<<
+// mainnet or ethereum3 (custom chain: config in ./ponder.address.ts)
+const chain = ethereum3;
+const startBlockA = (chain.id as number) === 1 ? 18451518 : 0;
+const startBlockB = (chain.id as number) === 1 ? 18451536 : 90;
 
+const transport = http((chain.id as number) === 1 ? process.env.PONDER_RPC_URL_1 : ethereum3.rpcUrls.default.http[0]);
 const openPositionEvent = parseAbiItem(
 	'event PositionOpened(address indexed owner,address indexed position,address zchf,address collateral,uint256 price)'
 );
 
 export default createConfig({
 	networks: {
-		ethereum3: {
-			chainId: 1337,
+		[chain.name]: {
+			chainId: chain.id,
 			transport,
 		},
 	},
 	contracts: {
 		Frankencoin: {
-			network: 'ethereum3',
+			network: chain.name,
 			abi: Frankencoin,
-			address: '0x4800b6c288e4B2BBa7b2314328DB485F5FfB0414',
-			startBlock: 0,
+			address: ADDRESS[chain!.id]!.frankenCoin as Address,
+			startBlock: startBlockA,
 		},
 		Equity: {
-			network: 'ethereum3',
+			network: chain.name,
 			abi: Equity,
-			address: '0xD47DE3328848cf8fd4079673cA40510536323e59',
-			startBlock: 0,
+			address: ADDRESS[chain!.id]!.equity as Address,
+			startBlock: startBlockA,
 		},
 		MintingHub: {
-			network: 'ethereum3',
+			network: chain.name,
 			abi: MintingHub,
-			address: '0x60614BE7fD2F92bf96caa61d434a4e04Af6228c3',
-			startBlock: 1400,
+			address: ADDRESS[chain!.id]!.mintingHub as Address,
+			startBlock: startBlockB,
 		},
 		Position: {
-			network: 'ethereum3',
+			network: chain.name,
 			abi: Position,
 			factory: {
-				address: '0x60614BE7fD2F92bf96caa61d434a4e04Af6228c3',
+				address: ADDRESS[chain!.id]!.mintingHub as Address,
 				event: openPositionEvent,
 				parameter: 'position',
 			},
-			startBlock: 1400,
+			startBlock: startBlockB,
 		},
 	},
 });
