@@ -15,6 +15,12 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		functionName: 'limitForClones',
 	});
 
+	const cooldown = await client.readContract({
+		abi: PositionABI,
+		address: positionAddress,
+		functionName: 'cooldown',
+	});
+
 	const position = await Position.findUnique({
 		id: event.log.address.toLowerCase(),
 	});
@@ -33,6 +39,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 				limitForClones: limit,
 				availableForPosition,
 				availableForClones,
+				cooldown,
 				closed: collateral == 0n,
 			},
 		});
@@ -50,14 +57,23 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 
 ponder.on('Position:PositionDenied', async ({ event, context }) => {
 	const { Position, ActiveUser } = context.db;
+	const { client } = context;
 
 	const position = await Position.findUnique({
 		id: event.log.address.toLowerCase(),
 	});
+
+	const cooldown = await client.readContract({
+		abi: PositionABI,
+		address: event.log.address,
+		functionName: 'cooldown',
+	});
+
 	if (position) {
 		await Position.update({
 			id: event.log.address.toLowerCase(),
 			data: {
+				cooldown,
 				denied: true,
 			},
 		});
