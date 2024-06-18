@@ -10,9 +10,10 @@ import { mainnet } from 'viem/chains';
 import { ethereum3 } from './ponder.chains';
 
 // TODO: >>>>> change chain here <<<<<
-// mainnet or ethereum3 (custom chain: config in ./ponder.address.ts)
-const chain = ethereum3;
-const blockRange = undefined;
+// (add custom chain in ./ponder.address.ts)
+// mainnet or ethereum3
+const chain = mainnet;
+const blockRange = undefined; // undefined, ignores block range
 const startBlockA = (chain.id as number) === 1 ? 18451518 : 0;
 const startBlockB = (chain.id as number) === 1 ? 18451536 : 30;
 
@@ -24,6 +25,7 @@ const openPositionEvent = parseAbiItem(
 export default createConfig({
 	networks: {
 		[chain.name]: {
+			// TODO: Adjust if you have issues with free api key or fetch restrictions
 			// maxRequestsPerSecond: 5,
 			// pollingInterval: 10_000,
 			chainId: chain.id,
