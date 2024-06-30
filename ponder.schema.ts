@@ -138,4 +138,10 @@ export default createSchema((p) => ({
 		id: p.string(),
 		lastActiveTime: p.bigint(),
 	}),
+
+	Ecosystem: p.createTable({
+		id: p.string(),
+		value: p.string(),
+		amount: p.bigint(),
+	}),
 }));

@@ -103,7 +103,7 @@ ponder.on('Frankencoin:MinterDenied', async ({ event, context }) => {
 });
 
 ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
-	const { Mint, Burn, ActiveUser } = context.db;
+	const { Mint, Burn, ActiveUser, Ecosystem } = context.db;
 
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
@@ -115,6 +115,17 @@ ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
 			},
+		});
+
+		await Ecosystem.upsert({
+			id: 'Frankencoin:Mint',
+			create: {
+				value: '',
+				amount: event.args.value,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + event.args.value,
+			}),
 		});
 	}
 
@@ -128,6 +139,17 @@ ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
 			},
+		});
+
+		await Ecosystem.upsert({
+			id: 'Frankencoin:Burn',
+			create: {
+				value: '',
+				amount: event.args.value,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + event.args.value,
+			}),
 		});
 	}
 
