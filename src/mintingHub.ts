@@ -220,10 +220,22 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 	});
 });
 
+/**
+struct Challenge {
+	address challenger; // the address from which the challenge was initiated
+	uint64 start; // the start of the challenge
+	IPosition position; // the position that was challenged
+	uint256 size; // how much collateral the challenger provided
+}
+**/
+// event ChallengeStarted(address indexed challenger, address indexed position, uint256 size, uint256 number);
+// emit ChallengeStarted(msg.sender, address(position), _collateralAmount, pos);
 ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 	const { client } = context;
 	const { Challenge, ActiveUser } = context.db;
 	const { MintingHub } = context.contracts;
+
+	console.log('MintingHub:ChallengeStarted', event.args);
 
 	const challenges = await client.readContract({
 		abi: MintingHub.abi,
@@ -244,12 +256,13 @@ ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 			position: event.args.position,
 			number: event.args.number,
 			challenger: event.args.challenger,
-			size: event.args.size,
 			start: challenges[1],
+			created: event.block.timestamp,
 			duration: period,
-			bid: 0n,
-			acquiredCollateral: 0n,
+			size: event.args.size,
+			bids: 0n,
 			filledSize: 0n,
+			acquiredCollateral: 0n,
 			status: 'Active',
 		},
 	});
@@ -264,10 +277,13 @@ ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 	});
 });
 
+// event ChallengeAverted(address indexed position, uint256 number, uint256 size);
 ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 	const { client } = context;
-	const { Position, Challenge, ActiveUser } = context.db;
+	const { Position, Challenge, ChallengeBid, ActiveUser } = context.db;
 	const { MintingHub } = context.contracts;
+
+	console.log('ChallengeAverted', event.args);
 
 	const challenges = await client.readContract({
 		abi: MintingHub.abi,
@@ -275,6 +291,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 		functionName: 'challenges',
 		args: [event.args.number],
 	});
+	console.log('ChallengeAverted:challenges', challenges);
 
 	const cooldown = await client.readContract({
 		abi: PositionABI,
@@ -282,16 +299,48 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 		functionName: 'cooldown',
 	});
 
-	const challengeId = getChallengeId(event.args.position, event.args.number);
+	const liqPrice = await client.readContract({
+		abi: PositionABI,
+		address: event.args.position,
+		functionName: 'price',
+	});
 
+	const challengeId = getChallengeId(event.args.position, event.args.number);
+	const challenge = await Challenge.findUnique({
+		id: challengeId,
+	});
+
+	if (!challenge) throw new Error('Challenge not found');
+
+	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
+
+	// create ChallengeBid entry
+	await ChallengeBid.create({
+		id: challengeBidId,
+		data: {
+			position: event.args.position,
+			number: event.args.number,
+			numberBid: challenge.bids,
+			created: event.block.timestamp,
+			bidType: 'Averted',
+			price: liqPrice,
+			filledSize: event.args.size,
+			acquiredCollateral: 0n,
+			challengeSize: challenge.size,
+		},
+	});
+
+	// update Challenge related changes
 	await Challenge.update({
 		id: challengeId,
 		data: ({ current }) => ({
+			bids: current.bids + 1n,
 			filledSize: current.filledSize + event.args.size,
 			status: challenges[3] === 0n ? 'Success' : current.status,
 		}),
 	});
 
+	// update Position related changes
 	await Position.update({
 		id: event.args.position.toLowerCase(),
 		data: { cooldown },
@@ -308,10 +357,20 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 	});
 });
 
+// event ChallengeSucceeded(
+// 	address indexed position,
+// 	uint256 number,
+// 	uint256 bid,
+// 	uint256 acquiredCollateral,
+// 	uint256 challengeSize
+// );
+// emit ChallengeSucceeded(address(_challenge.position), _challengeNumber, offer, transferredCollateral, size);
 ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 	const { client } = context;
-	const { Position, Challenge, ActiveUser } = context.db;
+	const { Position, Challenge, ChallengeBid, ActiveUser } = context.db;
 	const { MintingHub } = context.contracts;
+
+	console.log('ChallengeSucceeded', event.args);
 
 	const challenges = await client.readContract({
 		abi: MintingHub.abi,
@@ -320,6 +379,8 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 		args: [event.args.number],
 	});
 
+	console.log('ChallengeSucceeded:challenges', challenges);
+
 	const cooldown = await client.readContract({
 		abi: PositionABI,
 		address: event.args.position,
@@ -327,11 +388,34 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 	});
 
 	const challengeId = getChallengeId(event.args.position, event.args.number);
+	const challenge = await Challenge.findUnique({
+		id: challengeId,
+	});
+
+	if (!challenge) throw new Error('Challenge not found');
+
+	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
+
+	// create ChallengeBid entry
+	await ChallengeBid.create({
+		id: challengeBidId,
+		data: {
+			position: event.args.position,
+			number: event.args.number,
+			numberBid: challenge.bids,
+			created: event.block.timestamp,
+			bidType: 'Succeeded',
+			price: event.args.bid,
+			filledSize: event.args.challengeSize,
+			acquiredCollateral: event.args.acquiredCollateral,
+			challengeSize: challenge.size,
+		},
+	});
 
 	await Challenge.update({
 		id: challengeId,
 		data: ({ current }) => ({
-			bid: current.bid + event.args.bid,
+			bids: current.bids + 1n,
 			acquiredCollateral: current.acquiredCollateral + event.args.acquiredCollateral,
 			filledSize: current.filledSize + event.args.challengeSize,
 			status: challenges[3] === 0n ? 'Success' : current.status,
@@ -355,5 +439,9 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 });
 
 const getChallengeId = (position: string, number: bigint) => {
-	return `${position}-challenge-${number}`;
+	return `${position.toLowerCase()}-challenge-${number}`;
+};
+
+const getChallengeBidId = (position: string, number: bigint, bid: bigint) => {
+	return `${position.toLowerCase()}-challenge-${number}-bid-${bid}`;
 };

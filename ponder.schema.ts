@@ -1,6 +1,8 @@
 import { createSchema } from '@ponder/core';
 
 export default createSchema((p) => ({
+	// -------------------------------------------------------------------------
+	// MINTINGHUB
 	Position: p.createTable({
 		id: p.string(),
 		position: p.string(),
@@ -8,7 +10,7 @@ export default createSchema((p) => ({
 		zchf: p.string(),
 		collateral: p.string(),
 		price: p.bigint(),
-		created: p.bigint(),
+		created: p.bigint(), // block timestamp when position was created
 		isOriginal: p.boolean(),
 		isClone: p.boolean(),
 		denied: p.boolean(),
@@ -36,30 +38,49 @@ export default createSchema((p) => ({
 	}),
 
 	Challenge: p.createTable({
-		id: p.string(),
+		id: p.string(), // e.g. 0x5d0e66DC411FEfBE9cAe9CE56dA9BCE8C027f492-challenge-2
+		position: p.string(), // position being challenged
+		number: p.bigint(), // number of the challenge in minting hub
 		challenger: p.string(),
-		position: p.string(),
-		start: p.bigint(),
+		start: p.bigint(), // timestamp for start of challenge
+		created: p.bigint(), // block timestamp when challenge was created
 		duration: p.bigint(),
-		size: p.bigint(),
+		size: p.bigint(), // size of the challenge, set by the challenger
+		bids: p.bigint(), // number of bids, starting with 0
+		filledSize: p.bigint(), // accumulated bids amounts, set by the bidders
+		acquiredCollateral: p.bigint(), // total amount of collateral acquired, set by the bidders
+		status: p.string(), // status: "Active" | "Success"
+	}),
+
+	ChallengeBid: p.createTable({
+		id: p.string(), // e.g. 0x5d0e66DC411FEfBE9cAe9CE56dA9BCE8C027f492-challenge-2-bid-0
+		position: p.string(),
+		number: p.bigint(),
+		numberBid: p.bigint(),
+		created: p.bigint(), // block timestamp when bid was created
+		bidType: p.string(), // "Averted" | "Succeeded"
+		price: p.bigint(), // bid price
 		filledSize: p.bigint(),
 		acquiredCollateral: p.bigint(),
-		number: p.bigint(),
-		bid: p.bigint(),
-		status: p.string(),
+		challengeSize: p.bigint(),
 	}),
 
-	VotingPower: p.createTable({
+	// -------------------------------------------------------------------------
+	// FRANKENCOIN
+	Mint: p.createTable({
 		id: p.string(),
-		address: p.string(),
-		votingPower: p.bigint(),
+		to: p.string(),
+		value: p.bigint(),
+		blockheight: p.bigint(),
+		timestamp: p.bigint(),
 	}),
 
-	FPS: p.createTable({
+	Burn: p.createTable({
 		id: p.string(),
-		profits: p.bigint(),
-		loss: p.bigint(),
-		reserve: p.bigint(),
+		from: p.string(),
+		value: p.bigint(),
+		blockheight: p.bigint(),
+		timestamp: p.bigint(),
 	}),
 
 	Minter: p.createTable({
@@ -73,6 +94,21 @@ export default createSchema((p) => ({
 		denyMessage: p.string().optional(),
 		denyDate: p.bigint().optional(),
 		vetor: p.string().optional(),
+	}),
+
+	// -------------------------------------------------------------------------
+	// FPS
+	VotingPower: p.createTable({
+		id: p.string(),
+		address: p.string(),
+		votingPower: p.bigint(),
+	}),
+
+	FPS: p.createTable({
+		id: p.string(),
+		profits: p.bigint(),
+		loss: p.bigint(),
+		reserve: p.bigint(),
 	}),
 
 	Delegation: p.createTable({
@@ -96,6 +132,8 @@ export default createSchema((p) => ({
 		lastPrice: p.bigint(),
 	}),
 
+	// -------------------------------------------------------------------------
+	// COMMON
 	ActiveUser: p.createTable({
 		id: p.string(),
 		lastActiveTime: p.bigint(),

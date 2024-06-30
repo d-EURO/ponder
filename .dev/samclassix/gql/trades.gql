@@ -1,0 +1,12 @@
+{
+  trades(orderBy: "time") {
+    items {
+      id
+      trader
+      amount
+      shares
+      price
+      time
+    }
+  }
+}
