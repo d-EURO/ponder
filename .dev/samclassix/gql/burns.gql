@@ -1,0 +1,11 @@
+{
+  burns(orderBy: "id" limit: 1000) {
+    items {
+      id
+      from
+      value
+      blockheight
+      timestamp
+    }
+  }
+}

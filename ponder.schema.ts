@@ -83,6 +83,12 @@ export default createSchema((p) => ({
 		timestamp: p.bigint(),
 	}),
 
+	MintBurnAddressMapper: p.createTable({
+		id: p.string(),
+		mint: p.bigint(),
+		burn: p.bigint(),
+	}),
+
 	Minter: p.createTable({
 		id: p.string(),
 		minter: p.string(),

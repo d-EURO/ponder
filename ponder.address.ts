@@ -1,5 +1,5 @@
 import { Address, zeroAddress } from 'viem';
-import { Chain, mainnet } from 'viem/chains';
+import { Chain, mainnet, polygon } from 'viem/chains';
 import { ethereum3 } from './ponder.chains';
 
 export type AddressObject = { [chainId in Chain['id']]?: { [key: string]: Address } };
@@ -23,5 +23,14 @@ export const ADDRESS: AddressObject = {
 		// mockWbtc: '0x1b01c6b10ca8AeD4F1e0d39319aa27183BBC1578',
 		// mockLseth: '0xd54Fb4EE40ca7F0FeF1cd87AC81dE3F247776209',
 		// mockBoss: '0x7f6c45725F521e7B5b0e3357A8Ed4152c0BBd01E',
+	},
+	[polygon.id]: {
+		// For testing purposes only
+		frankenCoin: '0x3EC9BCe8b7E8e1F17c4BeB9e18C75622920995c7',
+		bridge: zeroAddress,
+		xchf: zeroAddress,
+		equity: '0xa51ABAb13EEB61b839303dE72E1Ab8dFCc55e9F2',
+		mintingHub: '0x492929dd8eb0B4D0070BAC909b83aF519496e12f',
+		wFPS: zeroAddress,
 	},
 };

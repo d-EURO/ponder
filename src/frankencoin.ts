@@ -1,5 +1,5 @@
 import { ponder } from '@/generated';
-import { zeroAddress } from 'viem';
+import { Address, zeroAddress } from 'viem';
 
 ponder.on('Frankencoin:Profit', async ({ event, context }) => {
 	const { FPS, ActiveUser } = context.db;
@@ -103,7 +103,7 @@ ponder.on('Frankencoin:MinterDenied', async ({ event, context }) => {
 });
 
 ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
-	const { Mint, Burn, ActiveUser, Ecosystem } = context.db;
+	const { Mint, Burn, MintBurnAddressMapper, ActiveUser, Ecosystem } = context.db;
 
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
@@ -118,6 +118,17 @@ ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
 		});
 
 		await Ecosystem.upsert({
+			id: 'Frankencoin:MintCounter',
+			create: {
+				value: '',
+				amount: 1n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + 1n,
+			}),
+		});
+
+		await Ecosystem.upsert({
 			id: 'Frankencoin:Mint',
 			create: {
 				value: '',
@@ -127,18 +138,50 @@ ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
 				amount: current.amount + event.args.value,
 			}),
 		});
+
+		await MintBurnAddressMapper.upsert({
+			id: event.args.to.toLowerCase(),
+			create: {
+				mint: event.args.value,
+				burn: 0n,
+			},
+			update: ({ current }) => ({
+				mint: current.mint + event.args.value,
+			}),
+		});
+
+		await ActiveUser.upsert({
+			id: event.transaction.to as Address,
+			create: {
+				lastActiveTime: event.block.timestamp,
+			},
+			update: () => ({
+				lastActiveTime: event.block.timestamp,
+			}),
+		});
 	}
 
 	// emit Transfer(account, address(0), amount);
 	if (event.args.to === zeroAddress) {
 		await Burn.create({
-			id: `${event.args.to}-burn-${event.block.number}`,
+			id: `${event.args.from}-burn-${event.block.number}`,
 			data: {
 				from: event.args.from,
 				value: event.args.value,
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
 			},
+		});
+
+		await Ecosystem.upsert({
+			id: 'Frankencoin:BurnCounter',
+			create: {
+				value: '',
+				amount: 1n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + 1n,
+			}),
 		});
 
 		await Ecosystem.upsert({
@@ -151,15 +194,26 @@ ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
 				amount: current.amount + event.args.value,
 			}),
 		});
-	}
 
-	await ActiveUser.upsert({
-		id: event.transaction.from,
-		create: {
-			lastActiveTime: event.block.timestamp,
-		},
-		update: () => ({
-			lastActiveTime: event.block.timestamp,
-		}),
-	});
+		await MintBurnAddressMapper.upsert({
+			id: event.args.from.toLowerCase(),
+			create: {
+				mint: 0n,
+				burn: event.args.value,
+			},
+			update: ({ current }) => ({
+				burn: current.burn + event.args.value,
+			}),
+		});
+
+		await ActiveUser.upsert({
+			id: event.transaction.from,
+			create: {
+				lastActiveTime: event.block.timestamp,
+			},
+			update: () => ({
+				lastActiveTime: event.block.timestamp,
+			}),
+		});
+	}
 });

@@ -1,0 +1,11 @@
+{
+  mints(orderBy: "id" limit: 1000) {
+    items {
+      id
+      to
+      value
+      blockheight
+      timestamp
+    }
+  }
+}
