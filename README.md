@@ -1,9 +1,10 @@
 # Frankencoin Ponder
 
-## Automatic deployment
+## Deployment of service
 
-The main branch should deploy to **ponder.frankencoin.com**
-The dev Branch should deploy to **ponder.dev.frankencoin.com**
+-   Main branch should auto. deploy to: **ponder.frankencoin.com**
+-   Developer Mainnet deploy to: **ponder.frankencoin.org**
+-   Developer Testnet deploy to: **ponder.testnet.frankencoin.org**
 
 ## Ponder needs .env.local
 
