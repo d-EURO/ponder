@@ -8,11 +8,17 @@ import { Position } from './abis/Position';
 import { ADDRESS } from './ponder.address';
 import { mainnet, polygon } from 'viem/chains';
 import { ethereum3 } from './ponder.chains';
+import { exit } from 'process';
 
-// TODO: >>>>> change chain here <<<<<
 // (add custom chain in ./ponder.address.ts)
-// mainnet, ethereum3, polygon
-const chain = mainnet;
+// mainnet (default), ethereum3, polygon
+const chain =
+	(process.env.PONDER_PROFILE as string) == 'polygon'
+		? polygon
+		: (process.env.PONDER_PROFILE as string) == 'ethereum3'
+		? ethereum3
+		: mainnet;
+
 const CONFIG = {
 	[mainnet.id]: {
 		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
@@ -24,8 +30,8 @@ const CONFIG = {
 	},
 	[polygon.id]: {
 		rpc: process.env.RPC_URL_POLYGON ?? polygon.rpcUrls.default.http[0],
-		startBlockA: 58822000,
-		startBlockB: 58822050,
+		startBlockA: 58907600,
+		startBlockB: 58907700,
 		blockrange: undefined,
 		maxRequestsPerSecond: undefined,
 		pollingInterval: undefined,

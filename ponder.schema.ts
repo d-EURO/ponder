@@ -57,6 +57,7 @@ export default createSchema((p) => ({
 		position: p.string(),
 		number: p.bigint(),
 		numberBid: p.bigint(),
+		bidder: p.string(),
 		created: p.bigint(), // block timestamp when bid was created
 		bidType: p.string(), // "Averted" | "Succeeded"
 		price: p.bigint(), // bid price

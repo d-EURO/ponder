@@ -11,6 +11,9 @@ check out ".env.local" file to adjust environment.
 For SQLite, REMOVE THE DATABASE_URL LINE.
 
 ```
+# Select Profile/Chain
+PONDER_PROFILE=polygon
+
 # Mainnet RPC URL used for fetching blockchain data. Alchemy is recommended.
 PONDER_RPC_URL_MAINNET=https://eth-mainnet.g.alchemy.com/v2/...
 PONDER_RPC_URL_POLYGON=... # For testing purposes only
@@ -21,13 +24,18 @@ DATABASE_URL=
 
 ## Ponder config
 
-You can adjust the chain and chain specific parameters in "ponder.config.ts".
+You can adjust the default chain and chain specific parameters in "ponder.config.ts".
 
 ```
-// TODO: >>>>> change chain here <<<<<
 // (add custom chain in ./ponder.address.ts)
-// mainnet, ethereum3, polygon
-const chain = mainnet;
+// mainnet (default), ethereum3, polygon
+const chain =
+	(process.env.PONDER_PROFILE as string) == 'polygon'
+		? polygon
+		: (process.env.PONDER_PROFILE as string) == 'ethereum3'
+		? ethereum3
+		: mainnet;
+
 const CONFIG = {
 	[mainnet.id]: {
 		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
