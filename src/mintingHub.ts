@@ -264,16 +264,25 @@ ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 		functionName: 'challengePeriod',
 	});
 
+	const liqPrice = await client.readContract({
+		abi: PositionABI,
+		address: event.args.position,
+		functionName: 'price',
+	});
+
 	await Challenge.create({
 		id: getChallengeId(event.args.position, event.args.number),
 		data: {
 			position: event.args.position,
 			number: event.args.number,
+
 			challenger: event.args.challenger,
 			start: challenges[1],
 			created: event.block.timestamp,
 			duration: period,
 			size: event.args.size,
+			liqPrice,
+
 			bids: 0n,
 			filledSize: 0n,
 			acquiredCollateral: 0n,
@@ -353,7 +362,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 			created: event.block.timestamp,
 			bidType: 'Averted',
 			price: liqPrice,
-			filledSize: challenge.filledSize + event.args.size,
+			filledSize: event.args.size,
 			acquiredCollateral: 0n,
 			challengeSize: challenge.size,
 		},
@@ -449,7 +458,7 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 			created: event.block.timestamp,
 			bidType: 'Succeeded',
 			price: event.args.bid,
-			filledSize: challenge.filledSize + event.args.challengeSize,
+			filledSize: event.args.challengeSize,
 			acquiredCollateral: event.args.acquiredCollateral,
 			challengeSize: challenge.size,
 		},

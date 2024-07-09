@@ -46,6 +46,7 @@ export default createSchema((p) => ({
 		created: p.bigint(), // block timestamp when challenge was created
 		duration: p.bigint(),
 		size: p.bigint(), // size of the challenge, set by the challenger
+		liqPrice: p.bigint(), // trigger price for challenge
 		bids: p.bigint(), // number of bids, starting with 0
 		filledSize: p.bigint(), // accumulated bids amounts, set by the bidders
 		acquiredCollateral: p.bigint(), // total amount of collateral acquired, set by the bidders
