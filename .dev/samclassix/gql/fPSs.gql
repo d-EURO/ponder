@@ -1,0 +1,10 @@
+{
+  fPSs(orderBy: "id") {
+    items {
+      id
+      profits
+      loss
+      reserve
+    }
+  }
+}

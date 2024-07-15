@@ -1,21 +1,51 @@
 # Frankencoin Ponder
 
-## Automatic deployment
+## Deployment of service
 
-The main branch should deploy to **ponder.frankencoin.com**
-The dev Branch should deploy to **ponder.dev.frankencoin.com**
+-   Main branch should auto. deploy to: **ponder.frankencoin.com**
+-   Developer Mainnet deploy to: **ponder.frankencoin.org**
+-   Developer Testnet deploy to: **ponder.testnet.frankencoin.org**
 
 ## Ponder needs .env.local
 
 check out ".env.local" file to adjust environment.
-For SQLite, REMOVE the DATABASE_URL line.
+For SQLite, REMOVE THE DATABASE_URL LINE.
 
 ```
+# Select Profile/Chain
+PONDER_PROFILE=polygon
+
 # Mainnet RPC URL used for fetching blockchain data. Alchemy is recommended.
-PONDER_RPC_URL_1=https://eth-mainnet.g.alchemy.com/v2/...
+PONDER_RPC_URL_MAINNET=https://eth-mainnet.g.alchemy.com/v2/...
+PONDER_RPC_URL_POLYGON=... # For testing purposes only
 
 # (Optional) Postgres database URL. If not provided, SQLite will be used.
-DATABASE_URL=...
+DATABASE_URL=
+```
+
+## Ponder config
+
+You can adjust the default chain and chain specific parameters in "ponder.config.ts".
+
+```
+// (add custom chain in ./ponder.address.ts)
+// mainnet (default), ethereum3, polygon
+const chain =
+	(process.env.PONDER_PROFILE as string) == 'polygon'
+		? polygon
+		: (process.env.PONDER_PROFILE as string) == 'ethereum3'
+		? ethereum3
+		: mainnet;
+
+const CONFIG = {
+	[mainnet.id]: {
+		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
+		startBlockA: 18451518,
+		startBlockB: 18451536,
+		blockrange: undefined,
+		maxRequestsPerSecond: undefined,
+		pollingInterval: undefined,
+	},
 ```
 
 ## Add / Adjust custom chain(s)

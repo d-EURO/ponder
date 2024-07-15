@@ -1,0 +1,21 @@
+{
+	challenges(orderBy: "created", orderDirection: "desc") {
+		items {
+			id
+			position
+			number
+
+			challenger
+			start
+			created
+			duration
+			size
+			liqPrice
+
+			bids
+			filledSize
+			acquiredCollateral
+			status
+		}
+	}
+}

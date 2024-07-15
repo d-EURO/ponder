@@ -44,6 +44,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			},
 		});
 	}
+
 	await ActiveUser.upsert({
 		id: event.transaction.from,
 		create: {
@@ -56,7 +57,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 });
 
 ponder.on('Position:PositionDenied', async ({ event, context }) => {
-	const { Position, ActiveUser } = context.db;
+	const { Position, ActiveUser, Ecosystem } = context.db;
 	const { client } = context;
 
 	const position = await Position.findUnique({
@@ -78,6 +79,7 @@ ponder.on('Position:PositionDenied', async ({ event, context }) => {
 			},
 		});
 	}
+
 	await ActiveUser.upsert({
 		id: event.transaction.from,
 		create: {

@@ -6,18 +6,46 @@ import { MintingHub } from './abis/MintingHub';
 import { Frankencoin } from './abis/Frankencoin';
 import { Position } from './abis/Position';
 import { ADDRESS } from './ponder.address';
-import { mainnet } from 'viem/chains';
+import { mainnet, polygon } from 'viem/chains';
 import { ethereum3 } from './ponder.chains';
+import { exit } from 'process';
 
-// TODO: >>>>> change chain here <<<<<
 // (add custom chain in ./ponder.address.ts)
-// mainnet or ethereum3
-const chain = mainnet;
-const blockRange = undefined; // undefined, ignores block range
-const startBlockA = (chain.id as number) === 1 ? 18451518 : 0;
-const startBlockB = (chain.id as number) === 1 ? 18451536 : 30;
+// mainnet (default), ethereum3, polygon
+const chain =
+	(process.env.PONDER_PROFILE as string) == 'polygon'
+		? polygon
+		: (process.env.PONDER_PROFILE as string) == 'ethereum3'
+		? ethereum3
+		: mainnet;
 
-const transport = http((chain.id as number) === 1 ? process.env.PONDER_RPC_URL_1 : chain.rpcUrls.default.http[0]);
+const CONFIG = {
+	[mainnet.id]: {
+		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
+		startBlockA: 18451518,
+		startBlockB: 18451536,
+		blockrange: undefined,
+		maxRequestsPerSecond: undefined,
+		pollingInterval: undefined,
+	},
+	[polygon.id]: {
+		rpc: process.env.RPC_URL_POLYGON ?? polygon.rpcUrls.default.http[0],
+		startBlockA: 58907600,
+		startBlockB: 58907700,
+		blockrange: undefined,
+		maxRequestsPerSecond: undefined,
+		pollingInterval: undefined,
+	},
+	[ethereum3.id]: {
+		rpc: ethereum3.rpcUrls.default.http[0],
+		startBlockA: 0,
+		startBlockB: 80,
+		blockrange: undefined,
+		maxRequestsPerSecond: undefined, // e.g. 5
+		pollingInterval: undefined, // e.g. 10_000
+	},
+};
+
 const openPositionEvent = parseAbiItem(
 	'event PositionOpened(address indexed owner,address indexed position,address zchf,address collateral,uint256 price)'
 );
@@ -25,11 +53,10 @@ const openPositionEvent = parseAbiItem(
 export default createConfig({
 	networks: {
 		[chain.name]: {
-			// TODO: Adjust if you have issues with free api key or fetch restrictions
-			// maxRequestsPerSecond: 5,
-			// pollingInterval: 10_000,
 			chainId: chain.id,
-			transport,
+			maxRequestsPerSecond: CONFIG[chain.id].maxRequestsPerSecond,
+			pollingInterval: CONFIG[chain.id].pollingInterval,
+			transport: http(CONFIG[chain!.id].rpc),
 		},
 	},
 	contracts: {
@@ -37,22 +64,22 @@ export default createConfig({
 			network: chain.name,
 			abi: Frankencoin,
 			address: ADDRESS[chain!.id]!.frankenCoin as Address,
-			startBlock: startBlockA,
-			maxBlockRange: blockRange,
+			startBlock: CONFIG[chain!.id].startBlockA,
+			maxBlockRange: CONFIG[chain!.id].blockrange,
 		},
 		Equity: {
 			network: chain.name,
 			abi: Equity,
 			address: ADDRESS[chain!.id]!.equity as Address,
-			startBlock: startBlockA,
-			maxBlockRange: blockRange,
+			startBlock: CONFIG[chain!.id].startBlockA,
+			maxBlockRange: CONFIG[chain!.id].blockrange,
 		},
 		MintingHub: {
 			network: chain.name,
 			abi: MintingHub,
 			address: ADDRESS[chain!.id]!.mintingHub as Address,
-			startBlock: startBlockB,
-			maxBlockRange: blockRange,
+			startBlock: CONFIG[chain!.id].startBlockB,
+			maxBlockRange: CONFIG[chain!.id].blockrange,
 		},
 		Position: {
 			network: chain.name,
@@ -62,8 +89,8 @@ export default createConfig({
 				event: openPositionEvent,
 				parameter: 'position',
 			},
-			startBlock: startBlockB,
-			maxBlockRange: blockRange,
+			startBlock: CONFIG[chain!.id].startBlockB,
+			maxBlockRange: CONFIG[chain!.id].blockrange,
 		},
 	},
 });

@@ -1,0 +1,9 @@
+{
+  mintBurnAddressMappers(orderBy: "id" limit: 1000) {
+    items {
+      id
+      mint
+      burn
+    }
+  }
+}
