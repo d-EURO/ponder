@@ -25,24 +25,24 @@ const CONFIG = {
 		startBlockA: 18451518,
 		startBlockB: 18451536,
 		blockrange: undefined,
-		maxRequestsPerSecond: undefined,
-		pollingInterval: undefined,
+		maxRequestsPerSecond: 10,
+		pollingInterval: 5_000,
 	},
 	[polygon.id]: {
 		rpc: process.env.RPC_URL_POLYGON ?? polygon.rpcUrls.default.http[0],
 		startBlockA: 58907600,
 		startBlockB: 58907700,
 		blockrange: undefined,
-		maxRequestsPerSecond: undefined,
-		pollingInterval: undefined,
+		maxRequestsPerSecond: 10,
+		pollingInterval: 5_000,
 	},
 	[ethereum3.id]: {
 		rpc: ethereum3.rpcUrls.default.http[0],
 		startBlockA: 0,
 		startBlockB: 80,
 		blockrange: undefined,
-		maxRequestsPerSecond: undefined, // e.g. 5
-		pollingInterval: undefined, // e.g. 10_000
+		maxRequestsPerSecond: 10, // e.g. 5
+		pollingInterval: 5_000, // e.g. 10_000
 	},
 };
 
