@@ -25,7 +25,7 @@ const CONFIG = {
 		startBlockA: 18451518,
 		startBlockB: 18451536,
 		blockrange: undefined,
-		maxRequestsPerSecond: 10,
+		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
 	},
 	[polygon.id]: {
@@ -33,7 +33,7 @@ const CONFIG = {
 		startBlockA: 58907600,
 		startBlockB: 58907700,
 		blockrange: undefined,
-		maxRequestsPerSecond: 10,
+		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
 	},
 	[ethereum3.id]: {
@@ -41,7 +41,7 @@ const CONFIG = {
 		startBlockA: 0,
 		startBlockB: 80,
 		blockrange: undefined,
-		maxRequestsPerSecond: 10, // e.g. 5
+		maxRequestsPerSecond: 5, // e.g. 5
 		pollingInterval: 5_000, // e.g. 10_000
 	},
 };
