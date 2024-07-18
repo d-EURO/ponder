@@ -249,7 +249,7 @@ ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 	const { Challenge, ActiveUser, Ecosystem } = context.db;
 	const { MintingHub } = context.contracts;
 
-	console.log('MintingHub:ChallengeStarted', event.args);
+	// console.log('MintingHub:ChallengeStarted', event.args);
 
 	const challenges = await client.readContract({
 		abi: MintingHub.abi,
@@ -320,7 +320,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 	const { Position, Challenge, ChallengeBid, ActiveUser, Ecosystem } = context.db;
 	const { MintingHub } = context.contracts;
 
-	console.log('ChallengeAverted', event.args);
+	// console.log('ChallengeAverted', event.args);
 
 	const challenges = await client.readContract({
 		abi: MintingHub.abi,
@@ -328,7 +328,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 		functionName: 'challenges',
 		args: [event.args.number],
 	});
-	console.log('ChallengeAverted:challenges', challenges);
+	// console.log('ChallengeAverted:challenges', challenges);
 
 	const cooldown = await client.readContract({
 		abi: PositionABI,
@@ -349,7 +349,17 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 
 	if (!challenge) throw new Error('Challenge not found');
 
+	// const position = await Position.findUnique({
+	// 	id: event.args.position.toLowerCase(),
+	// });
+
+	// if (!position) throw new Error('Position not found');
+
 	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
+
+	const _price: number = parseInt(liqPrice.toString());
+	const _size: number = parseInt(event.args.size.toString());
+	const _amount: number = (_price / 1e18) * _size;
 
 	// create ChallengeBid entry
 	await ChallengeBid.create({
@@ -361,6 +371,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 			bidder: event.transaction.from,
 			created: event.block.timestamp,
 			bidType: 'Averted',
+			bid: BigInt(_amount),
 			price: liqPrice,
 			filledSize: event.args.size,
 			acquiredCollateral: 0n,
@@ -421,7 +432,7 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 	const { Position, Challenge, ChallengeBid, ActiveUser, Ecosystem } = context.db;
 	const { MintingHub } = context.contracts;
 
-	console.log('ChallengeSucceeded', event.args);
+	// console.log('ChallengeSucceeded', event.args);
 
 	const challenges = await client.readContract({
 		abi: MintingHub.abi,
@@ -430,7 +441,7 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 		args: [event.args.number],
 	});
 
-	console.log('ChallengeSucceeded:challenges', challenges);
+	// console.log('ChallengeSucceeded:challenges', challenges);
 
 	const cooldown = await client.readContract({
 		abi: PositionABI,
@@ -445,7 +456,17 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 
 	if (!challenge) throw new Error('Challenge not found');
 
+	// const position = await Position.findUnique({
+	// 	id: event.args.position.toLowerCase(),
+	// });
+
+	// if (!position) throw new Error('Position not found');
+
 	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
+
+	const _bid: number = parseInt(event.args.bid.toString());
+	const _size: number = parseInt(event.args.challengeSize.toString());
+	const _price: number = (_bid * 10 ** 18) / _size;
 
 	// create ChallengeBid entry
 	await ChallengeBid.create({
@@ -457,7 +478,8 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 			bidder: event.transaction.from,
 			created: event.block.timestamp,
 			bidType: 'Succeeded',
-			price: event.args.bid,
+			bid: event.args.bid,
+			price: BigInt(_price),
 			filledSize: event.args.challengeSize,
 			acquiredCollateral: event.args.acquiredCollateral,
 			challengeSize: challenge.size,
