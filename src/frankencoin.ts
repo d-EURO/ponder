@@ -89,9 +89,9 @@ ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
 		}),
 	});
 
-	await Minter.create({
+	await Minter.upsert({
 		id: event.args.minter,
-		data: {
+		create: {
 			minter: event.args.minter,
 			applicationPeriod: event.args.applicationPeriod,
 			applicationFee: event.args.applicationFee,
@@ -99,6 +99,14 @@ ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
 			applyDate: event.block.timestamp,
 			suggestor: event.transaction.from,
 		},
+		update: ({ current }) => ({
+			minter: event.args.minter,
+			applicationPeriod: event.args.applicationPeriod,
+			applicationFee: event.args.applicationFee,
+			applyMessage: event.args.message,
+			applyDate: event.block.timestamp,
+			suggestor: event.transaction.from,
+		}),
 	});
 
 	await ActiveUser.upsert({
