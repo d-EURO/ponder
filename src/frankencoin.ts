@@ -106,6 +106,9 @@ ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
 			applyMessage: event.args.message,
 			applyDate: event.block.timestamp,
 			suggestor: event.transaction.from,
+			denyDate: undefined,
+			denyMessage: undefined,
+			vetor: undefined,
 		}),
 	});
 
