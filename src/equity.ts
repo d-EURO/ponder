@@ -1,19 +1,99 @@
-import { Context, ponder } from '@/generated';
-import { zeroAddress } from 'viem';
+import { ponder } from '@/generated';
+import { Address, zeroAddress } from 'viem';
 
 ponder.on('Equity:Trade', async ({ event, context }) => {
-	const { Trade, VotingPower, TradeChart, ActiveUser } = context.db;
+	const { Trade, VotingPower, TradeChart, ActiveUser, Ecosystem } = context.db;
+	const trader: Address = event.args.who;
+	const amount: bigint = event.args.totPrice;
+	const shares: bigint = event.args.amount;
+	const price: bigint = event.args.newprice;
+	const time: bigint = event.block.timestamp;
 
 	await Trade.create({
-		id: event.args.who + '_' + event.block.timestamp.toString(),
+		id: event.args.who + '_' + time.toString(),
 		data: {
-			trader: event.args.who,
-			amount: event.args.totPrice,
-			shares: event.args.amount,
-			price: event.args.newprice,
-			time: event.block.timestamp,
+			trader,
+			amount,
+			shares,
+			price,
+			time,
 		},
 	});
+
+	// invested or redeemed
+	if (shares > 0n) {
+		// cnt
+		await Ecosystem.upsert({
+			id: 'Equity:InvestedCounter',
+			create: {
+				value: '',
+				amount: 1n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + 1n,
+			}),
+		});
+
+		// accum.
+		await Ecosystem.upsert({
+			id: 'Equity:Invested',
+			create: {
+				value: '',
+				amount: 0n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + amount,
+			}),
+		});
+
+		// calc fee PPM for raw data
+		await Ecosystem.upsert({
+			id: 'Equity:InvestedFeePaidPPM',
+			create: {
+				value: '',
+				amount: 0n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + amount * 3000n,
+			}),
+		});
+	} else {
+		// cnt
+		await Ecosystem.upsert({
+			id: 'Equity:RedeemedCounter',
+			create: {
+				value: '',
+				amount: 1n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + 1n,
+			}),
+		});
+
+		// accum.
+		await Ecosystem.upsert({
+			id: 'Equity:Redeemed',
+			create: {
+				value: '',
+				amount: 0n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + amount,
+			}),
+		});
+
+		// calc fee PPM for raw data
+		await Ecosystem.upsert({
+			id: 'Equity:RedeemedFeePaidPPM',
+			create: {
+				value: '',
+				amount: 0n,
+			},
+			update: ({ current }) => ({
+				amount: current.amount + amount * 3000n,
+			}),
+		});
+	}
 
 	await VotingPower.upsert({
 		id: event.args.who,

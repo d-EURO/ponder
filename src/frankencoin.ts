@@ -2,7 +2,18 @@ import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
 
 ponder.on('Frankencoin:Profit', async ({ event, context }) => {
-	const { FPS, ActiveUser } = context.db;
+	const { FPS, ActiveUser, Ecosystem } = context.db;
+
+	await Ecosystem.upsert({
+		id: 'Equity:ProfitCounter',
+		create: {
+			value: '',
+			amount: 1n,
+		},
+		update: ({ current }) => ({
+			amount: current.amount + 1n,
+		}),
+	});
 
 	await FPS.upsert({
 		id: event.log.address,
@@ -28,7 +39,18 @@ ponder.on('Frankencoin:Profit', async ({ event, context }) => {
 });
 
 ponder.on('Frankencoin:Loss', async ({ event, context }) => {
-	const { FPS, ActiveUser } = context.db;
+	const { FPS, ActiveUser, Ecosystem } = context.db;
+
+	await Ecosystem.upsert({
+		id: 'Equity:LossCounter',
+		create: {
+			value: '',
+			amount: 1n,
+		},
+		update: ({ current }) => ({
+			amount: current.amount + 1n,
+		}),
+	});
 
 	await FPS.upsert({
 		id: event.log.address,
@@ -54,11 +76,22 @@ ponder.on('Frankencoin:Loss', async ({ event, context }) => {
 });
 
 ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
-	const { Minter, ActiveUser } = context.db;
+	const { Minter, ActiveUser, Ecosystem } = context.db;
 
-	await Minter.create({
+	await Ecosystem.upsert({
+		id: 'Frankencoin:MinterAppliedCounter',
+		create: {
+			value: '',
+			amount: 1n,
+		},
+		update: ({ current }) => ({
+			amount: current.amount + 1n,
+		}),
+	});
+
+	await Minter.upsert({
 		id: event.args.minter,
-		data: {
+		create: {
 			minter: event.args.minter,
 			applicationPeriod: event.args.applicationPeriod,
 			applicationFee: event.args.applicationFee,
@@ -66,6 +99,17 @@ ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
 			applyDate: event.block.timestamp,
 			suggestor: event.transaction.from,
 		},
+		update: ({ current }) => ({
+			minter: event.args.minter,
+			applicationPeriod: event.args.applicationPeriod,
+			applicationFee: event.args.applicationFee,
+			applyMessage: event.args.message,
+			applyDate: event.block.timestamp,
+			suggestor: event.transaction.from,
+			denyDate: undefined,
+			denyMessage: undefined,
+			vetor: undefined,
+		}),
 	});
 
 	await ActiveUser.upsert({
@@ -80,7 +124,18 @@ ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
 });
 
 ponder.on('Frankencoin:MinterDenied', async ({ event, context }) => {
-	const { Minter, ActiveUser } = context.db;
+	const { Minter, ActiveUser, Ecosystem } = context.db;
+
+	await Ecosystem.upsert({
+		id: 'Frankencoin:MinterDeniedCounter',
+		create: {
+			value: '',
+			amount: 1n,
+		},
+		update: ({ current }) => ({
+			amount: current.amount + 1n,
+		}),
+	});
 
 	await Minter.update({
 		id: event.args.minter,
@@ -104,6 +159,17 @@ ponder.on('Frankencoin:MinterDenied', async ({ event, context }) => {
 
 ponder.on('Frankencoin:Transfer', async ({ event, context }) => {
 	const { Mint, Burn, MintBurnAddressMapper, ActiveUser, Ecosystem } = context.db;
+
+	await Ecosystem.upsert({
+		id: 'Frankencoin:TransferCounter',
+		create: {
+			value: '',
+			amount: 1n,
+		},
+		update: ({ current }) => ({
+			amount: current.amount + 1n,
+		}),
+	});
 
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
