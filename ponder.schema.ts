@@ -94,6 +94,7 @@ export default createSchema((p) => ({
 
 	Minter: p.createTable({
 		id: p.string(),
+		txHash: p.string(),
 		minter: p.string(),
 		applicationPeriod: p.bigint(),
 		applicationFee: p.bigint(),
