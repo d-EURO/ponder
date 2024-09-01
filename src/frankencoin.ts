@@ -78,8 +78,6 @@ ponder.on('Frankencoin:Loss', async ({ event, context }) => {
 ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
 	const { Minter, ActiveUser, Ecosystem } = context.db;
 
-	event.transaction.hash;
-
 	await Ecosystem.upsert({
 		id: 'Frankencoin:MinterAppliedCounter',
 		create: {
