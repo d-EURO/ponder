@@ -54,6 +54,7 @@ export default createSchema((p) => ({
 		priceAdjusted: p.bigint(),
 		mintedAdjusted: p.bigint(),
 		annualInterestPPM: p.int(),
+		reserveContribution: p.int(),
 		feeTimeframe: p.int(),
 		feePPM: p.int(),
 		feePaid: p.bigint(),

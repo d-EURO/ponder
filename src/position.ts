@@ -77,6 +77,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		original: string;
 		expiration: bigint;
 		annualInterestPPM: number;
+		reserveContribution: number;
 		collateral: string;
 		collateralName: string;
 		collateralSymbol: string;
@@ -106,6 +107,12 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			abi: PositionABI,
 			address: positionAddress,
 			functionName: 'annualInterestPPM',
+		});
+
+		const reserveContribution = await client.readContract({
+			abi: PositionABI,
+			address: positionAddress,
+			functionName: 'reserveContribution',
 		});
 
 		const collateralAddress = await client.readContract({
@@ -138,6 +145,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			original,
 			expiration,
 			annualInterestPPM,
+			reserveContribution,
 			collateral: collateralAddress,
 			collateralName,
 			collateralSymbol,
@@ -150,6 +158,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			original: position.original,
 			expiration: position.expiration,
 			annualInterestPPM: position.annualInterestPPM,
+			reserveContribution: position.reserveContribution,
 			collateral: position.collateral,
 			collateralName: position.collateralName,
 			collateralSymbol: position.collateralSymbol,
@@ -194,6 +203,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 				priceAdjusted: price,
 				mintedAdjusted: minted,
 				annualInterestPPM: missingPositionData.annualInterestPPM,
+				reserveContribution: missingPositionData.reserveContribution,
 				feeTimeframe: getFeeTimeframe(),
 				feePPM: parseInt(getFeePPM().toString()),
 				feePaid: getFeePaid(minted),
@@ -227,6 +237,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 				priceAdjusted,
 				mintedAdjusted,
 				annualInterestPPM: missingPositionData.annualInterestPPM,
+				reserveContribution: missingPositionData.reserveContribution,
 				feeTimeframe: getFeeTimeframe(),
 				feePPM: parseInt(getFeePPM().toString()),
 				feePaid: mintedAdjusted > 0n ? getFeePaid(mintedAdjusted) : 0n,
