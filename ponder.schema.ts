@@ -41,6 +41,7 @@ export default createSchema((p) => ({
 		id: p.string(),
 		created: p.bigint(),
 		position: p.string(),
+		owner: p.string(),
 		isClone: p.boolean(),
 		collateral: p.string(),
 		collateralName: p.string(),

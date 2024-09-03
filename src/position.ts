@@ -73,6 +73,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 
 	let missingPositionData: {
 		position: string;
+		owner: string;
 		original: string;
 		expiration: bigint;
 		annualInterestPPM: number;
@@ -83,6 +84,12 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 	};
 
 	if (position === null) {
+		const owner = await client.readContract({
+			abi: PositionABI,
+			address: positionAddress,
+			functionName: 'owner',
+		});
+
 		const original = await client.readContract({
 			abi: PositionABI,
 			address: positionAddress,
@@ -127,6 +134,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 
 		missingPositionData = {
 			position: positionAddress,
+			owner,
 			original,
 			expiration,
 			annualInterestPPM,
@@ -138,6 +146,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 	} else {
 		missingPositionData = {
 			position: position.position,
+			owner: position.owner,
 			original: position.original,
 			expiration: position.expiration,
 			annualInterestPPM: position.annualInterestPPM,
@@ -172,6 +181,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			data: {
 				created: event.block.timestamp,
 				position: missingPositionData.position,
+				owner: missingPositionData.owner,
 				isClone: missingPositionData.original.toLowerCase() == missingPositionData.position.toLowerCase(),
 				collateral: missingPositionData.collateral,
 				collateralName: missingPositionData.collateralName,
@@ -204,6 +214,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			data: {
 				created: event.block.timestamp,
 				position: missingPositionData.position,
+				owner: missingPositionData.owner,
 				isClone: missingPositionData.original.toLowerCase() == missingPositionData.position.toLowerCase(),
 				collateral: missingPositionData.collateral,
 				collateralName: missingPositionData.collateralName,
