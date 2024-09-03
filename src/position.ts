@@ -188,6 +188,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		await MintingUpdate.create({
 			id: idMinting(1),
 			data: {
+				txHash: event.transaction.hash,
 				created: event.block.timestamp,
 				position: missingPositionData.position,
 				owner: missingPositionData.owner,
@@ -222,6 +223,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		await MintingUpdate.create({
 			id: idMinting(mintingCounter),
 			data: {
+				txHash: event.transaction.hash,
 				created: event.block.timestamp,
 				position: missingPositionData.position,
 				owner: missingPositionData.owner,
