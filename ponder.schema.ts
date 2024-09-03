@@ -39,6 +39,7 @@ export default createSchema((p) => ({
 
 	MintingUpdate: p.createTable({
 		id: p.string(),
+		created: p.bigint(),
 		position: p.string(),
 		isClone: p.boolean(),
 		collateral: p.string(),

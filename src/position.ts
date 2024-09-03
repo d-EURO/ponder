@@ -170,6 +170,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		await MintingUpdate.create({
 			id: idMinting(1),
 			data: {
+				created: event.block.timestamp,
 				position: missingPositionData.position,
 				isClone: missingPositionData.original.toLowerCase() == missingPositionData.position.toLowerCase(),
 				collateral: missingPositionData.collateral,
@@ -201,6 +202,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		await MintingUpdate.create({
 			id: idMinting(mintingCounter),
 			data: {
+				created: event.block.timestamp,
 				position: missingPositionData.position,
 				isClone: missingPositionData.original.toLowerCase() == missingPositionData.position.toLowerCase(),
 				collateral: missingPositionData.collateral,
