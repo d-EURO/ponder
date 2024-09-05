@@ -37,6 +37,30 @@ export default createSchema((p) => ({
 		minted: p.bigint(),
 	}),
 
+	MintingUpdate: p.createTable({
+		id: p.string(),
+		txHash: p.string(),
+		created: p.bigint(),
+		position: p.string(),
+		owner: p.string(),
+		isClone: p.boolean(),
+		collateral: p.string(),
+		collateralName: p.string(),
+		collateralSymbol: p.string(),
+		collateralDecimals: p.int(),
+		size: p.bigint(),
+		price: p.bigint(),
+		minted: p.bigint(),
+		sizeAdjusted: p.bigint(),
+		priceAdjusted: p.bigint(),
+		mintedAdjusted: p.bigint(),
+		annualInterestPPM: p.int(),
+		reserveContribution: p.int(),
+		feeTimeframe: p.int(),
+		feePPM: p.int(),
+		feePaid: p.bigint(),
+	}),
+
 	Challenge: p.createTable({
 		id: p.string(), // e.g. 0x5d0e66DC411FEfBE9cAe9CE56dA9BCE8C027f492-challenge-2
 		position: p.string(), // position being challenged
