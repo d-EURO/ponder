@@ -127,6 +127,7 @@ export default createSchema((p) => ({
 		suggestor: p.string(),
 		denyMessage: p.string().optional(),
 		denyDate: p.bigint().optional(),
+		denyTxHash: p.string().optional(),
 		vetor: p.string().optional(),
 	}),
 

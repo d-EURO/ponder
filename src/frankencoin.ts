@@ -110,6 +110,7 @@ ponder.on('Frankencoin:MinterApplied', async ({ event, context }) => {
 			suggestor: event.transaction.from,
 			denyDate: undefined,
 			denyMessage: undefined,
+			denyTxHash: undefined,
 			vetor: undefined,
 		}),
 	});
@@ -144,6 +145,7 @@ ponder.on('Frankencoin:MinterDenied', async ({ event, context }) => {
 		data: {
 			denyMessage: event.args.message,
 			denyDate: event.block.timestamp,
+			denyTxHash: event.transaction.hash,
 			vetor: event.transaction.from,
 		},
 	});
