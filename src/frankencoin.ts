@@ -60,7 +60,7 @@ ponder.on('Frankencoin:Loss', async ({ event, context }) => {
 			reserve: 0n,
 		},
 		update: ({ current }) => ({
-			loss: current.profits + event.args.amount,
+			loss: current.loss + event.args.amount,
 		}),
 	});
 
