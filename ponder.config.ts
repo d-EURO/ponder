@@ -18,7 +18,7 @@ export const CONFIG = {
 	},
 	[polygon.id]: {
 		rpc: process.env.RPC_URL_POLYGON ?? polygon.rpcUrls.default.http[0],
-		startStablecoin: 63633900,
+		startStablecoin: 64731388,
 		blockrange: undefined,
 		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
@@ -41,7 +41,7 @@ export default createConfig({
 			// Native
 			network: chain.name,
 			abi: EuroCoinABI,
-			address: ADDR.frankenCoin as Address,
+			address: ADDR.eurocoin as Address,
 			startBlock: config.startStablecoin,
 			maxBlockRange: config.blockrange,
 		},
