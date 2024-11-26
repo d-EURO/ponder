@@ -1,7 +1,7 @@
 import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
 
-ponder.on('Eurocoin:Profit', async ({ event, context }) => {
+ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	const { DEPS, ActiveUser, Ecosystem } = context.db;
 
 	await Ecosystem.upsert({
@@ -38,7 +38,7 @@ ponder.on('Eurocoin:Profit', async ({ event, context }) => {
 	});
 });
 
-ponder.on('Eurocoin:Loss', async ({ event, context }) => {
+ponder.on('Stablecoin:Loss', async ({ event, context }) => {
 	const { DEPS, ActiveUser, Ecosystem } = context.db;
 
 	await Ecosystem.upsert({
@@ -75,11 +75,11 @@ ponder.on('Eurocoin:Loss', async ({ event, context }) => {
 	});
 });
 
-ponder.on('Eurocoin:MinterApplied', async ({ event, context }) => {
+ponder.on('Stablecoin:MinterApplied', async ({ event, context }) => {
 	const { Minter, ActiveUser, Ecosystem } = context.db;
 
 	await Ecosystem.upsert({
-		id: 'Eurocoin:MinterAppliedCounter',
+		id: 'Stablecoin:MinterAppliedCounter',
 		create: {
 			value: '',
 			amount: 1n,
@@ -126,11 +126,11 @@ ponder.on('Eurocoin:MinterApplied', async ({ event, context }) => {
 	});
 });
 
-ponder.on('Eurocoin:MinterDenied', async ({ event, context }) => {
+ponder.on('Stablecoin:MinterDenied', async ({ event, context }) => {
 	const { Minter, ActiveUser, Ecosystem } = context.db;
 
 	await Ecosystem.upsert({
-		id: 'Eurocoin:MinterDeniedCounter',
+		id: 'Stablecoin:MinterDeniedCounter',
 		create: {
 			value: '',
 			amount: 1n,
@@ -161,11 +161,11 @@ ponder.on('Eurocoin:MinterDenied', async ({ event, context }) => {
 	});
 });
 
-ponder.on('Eurocoin:Transfer', async ({ event, context }) => {
+ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	const { Mint, Burn, MintBurnAddressMapper, ActiveUser, Ecosystem } = context.db;
 
 	await Ecosystem.upsert({
-		id: 'Eurocoin:TransferCounter',
+		id: 'Stablecoin:TransferCounter',
 		create: {
 			value: '',
 			amount: 1n,
@@ -188,7 +188,7 @@ ponder.on('Eurocoin:Transfer', async ({ event, context }) => {
 		});
 
 		await Ecosystem.upsert({
-			id: 'Eurocoin:MintCounter',
+			id: 'Stablecoin:MintCounter',
 			create: {
 				value: '',
 				amount: 1n,
@@ -199,7 +199,7 @@ ponder.on('Eurocoin:Transfer', async ({ event, context }) => {
 		});
 
 		await Ecosystem.upsert({
-			id: 'Eurocoin:Mint',
+			id: 'Stablecoin:Mint',
 			create: {
 				value: '',
 				amount: event.args.value,
@@ -244,7 +244,7 @@ ponder.on('Eurocoin:Transfer', async ({ event, context }) => {
 		});
 
 		await Ecosystem.upsert({
-			id: 'Eurocoin:BurnCounter',
+			id: 'Stablecoin:BurnCounter',
 			create: {
 				value: '',
 				amount: 1n,
@@ -255,7 +255,7 @@ ponder.on('Eurocoin:Transfer', async ({ event, context }) => {
 		});
 
 		await Ecosystem.upsert({
-			id: 'Eurocoin:Burn',
+			id: 'Stablecoin:Burn',
 			create: {
 				value: '',
 				amount: event.args.value,
