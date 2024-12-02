@@ -1,5 +1,5 @@
 import { ponder } from '@/generated';
-import { SavingsABI } from '@euro/eurocoin';
+import { SavingsABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
 import { Address } from 'viem';
 

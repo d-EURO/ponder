@@ -4,7 +4,7 @@ import { Address, http } from 'viem';
 import {
 	ADDRESS,
 	EquityABI,
-	EuroCoinABI
+	DecentralizedEUROABI,
 	MintingHubV2ABI,
 	PositionRollerABI,
 	PositionV2ABI,
@@ -19,16 +19,16 @@ export const ADDR = ADDRESS[chain.id]!;
 export const CONFIG = {
 	[mainnet.id]: {
 		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
-		startStablecoin: 18451518,
-		startMintingHubV2: 18451518,
+		startStablecoin: 21268319,
+		startMintingHubV2: 21289207,
 		blockrange: undefined,
 		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
 	},
 	[polygon.id]: {
 		rpc: process.env.RPC_URL_POLYGON ?? polygon.rpcUrls.default.http[0],
-		startStablecoin: 64731388,
-		startMintingHubV2: 64731388,
+		startStablecoin: 64985436,
+		startMintingHubV2: 64985436,
 		blockrange: undefined,
 		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
@@ -53,8 +53,8 @@ export default createConfig({
 		Stablecoin: {
 			// Native
 			network: chain.name,
-			abi: EuroCoinABI,
-			address: ADDR.eurocoin as Address,
+			abi: DecentralizedEUROABI,
+			address: ADDR.decentralizedEURO as Address,
 			startBlock: config.startStablecoin,
 			maxBlockRange: config.blockrange,
 		},
