@@ -70,7 +70,7 @@ export default createConfig({
 			// V2
 			network: chain.name,
 			abi: MintingHubV2ABI,
-			address: ADDR.mintingHubV2 as Address,
+			address: ADDR.mintingHubGateway as Address,
 			startBlock: config.startMintingHubV2,
 			maxBlockRange: config.blockrange,
 		},
@@ -79,7 +79,7 @@ export default createConfig({
 			network: chain.name,
 			abi: PositionV2ABI,
 			factory: {
-				address: ADDR.mintingHubV2 as Address,
+				address: ADDR.mintingHubGateway as Address,
 				event: openPositionEventV2,
 				parameter: 'position',
 			},
@@ -90,7 +90,7 @@ export default createConfig({
 			// V2
 			network: chain.name,
 			abi: SavingsABI,
-			address: ADDR.savings as Address,
+			address: ADDR.savingsGateway as Address,
 			startBlock: config.startMintingHubV2,
 			maxBlockRange: config.blockrange,
 		},

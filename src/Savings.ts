@@ -45,7 +45,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 
 	const ratePPM = await client.readContract({
 		abi: SavingsABI,
-		address: ADDR.savings,
+		address: ADDR.savingsGateway,
 		functionName: 'currentRatePPM',
 	});
 
@@ -114,7 +114,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 
 	const ratePPM = await client.readContract({
 		abi: SavingsABI,
-		address: ADDR.savings,
+		address: ADDR.savingsGateway,
 		functionName: 'currentRatePPM',
 	});
 
@@ -183,7 +183,7 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 
 	const ratePPM = await client.readContract({
 		abi: SavingsABI,
-		address: ADDR.savings,
+		address: ADDR.savingsGateway,
 		functionName: 'currentRatePPM',
 	});
 
