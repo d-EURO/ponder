@@ -19,8 +19,8 @@ export const ADDR = ADDRESS[chain.id]!;
 export const CONFIG = {
 	[mainnet.id]: {
 		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
-		startStablecoin: 21268319,
-		startMintingHubV2: 21289207,
+		startStablecoin: 21878427,
+		startMintingHubV2: 21878427,
 		blockrange: undefined,
 		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
@@ -70,7 +70,7 @@ export default createConfig({
 			// V2
 			network: chain.name,
 			abi: MintingHubV2ABI,
-			address: ADDR.mintingHubV2 as Address,
+			address: ADDR.mintingHubGateway as Address,
 			startBlock: config.startMintingHubV2,
 			maxBlockRange: config.blockrange,
 		},
@@ -79,7 +79,7 @@ export default createConfig({
 			network: chain.name,
 			abi: PositionV2ABI,
 			factory: {
-				address: ADDR.mintingHubV2 as Address,
+				address: ADDR.mintingHubGateway as Address,
 				event: openPositionEventV2,
 				parameter: 'position',
 			},
@@ -90,7 +90,7 @@ export default createConfig({
 			// V2
 			network: chain.name,
 			abi: SavingsABI,
-			address: ADDR.savings as Address,
+			address: ADDR.savingsGateway as Address,
 			startBlock: config.startMintingHubV2,
 			maxBlockRange: config.blockrange,
 		},

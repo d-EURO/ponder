@@ -134,23 +134,12 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		functionName: 'availableForMinting',
 	});
 
-	const minted = await client.readContract({
-		abi: PositionABI,
-		address: position,
-		functionName: 'minted',
-	});
-
 	const cooldown = await client.readContract({
 		abi: PositionABI,
 		address: event.args.position,
 		functionName: 'cooldown',
 	});
 
-	// ------------------------------------------------------------------
-	// CALC VALUES
-	// const priceAdjusted = price / BigInt(10 ** (36 - collateralDecimals));
-	const limitForPosition = (collateralBalance * price) / BigInt(10 ** deuroDecimals);
-	const availableForPosition = limitForPosition - minted;
 
 	// ------------------------------------------------------------------
 	// ------------------------------------------------------------------
@@ -218,7 +207,6 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 			limitForClones,
 			availableForClones,
 			availableForMinting,
-			minted,
 		},
 	});
 

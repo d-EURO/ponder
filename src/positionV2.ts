@@ -7,7 +7,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 	const { Savings } = context.contracts;
 
 	// event MintingUpdateV2(uint256 collateral, uint256 price, uint256 minted);
-	const { collateral, price, minted } = event.args;
+	const { collateral, price } = event.args;
 	const positionAddress = event.log.address;
 
 	// position updates
@@ -46,7 +46,6 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		data: {
 			collateralBalance: collateral,
 			price,
-			minted,
 			availableForMinting,
 			availableForClones,
 			cooldown: BigInt(cooldown),
@@ -111,17 +110,17 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 				collateralDecimals: position.collateralDecimals,
 				size: collateral,
 				price: price,
-				minted: minted,
+				minted: BigInt(0),
 				sizeAdjusted: collateral,
 				priceAdjusted: price,
-				mintedAdjusted: minted,
+				mintedAdjusted: BigInt(0),
 				annualInterestPPM: annualInterestPPM,
 				basePremiumPPM: baseRatePPM,
 				riskPremiumPPM: position.riskPremiumPPM,
 				reserveContribution: position.reserveContribution,
 				feeTimeframe: getFeeTimeframe(),
 				feePPM: parseInt(getFeePPM().toString()),
-				feePaid: getFeePaid(minted),
+				feePaid: BigInt(0),
 			},
 		});
 	} else {
@@ -132,7 +131,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 
 		const sizeAdjusted = collateral - prev.size;
 		const priceAdjusted = price - prev.price;
-		const mintedAdjusted = minted - prev.minted;
+		const mintedAdjusted = BigInt(0) - prev.minted;
 		const basePremiumPPMAdjusted = baseRatePPM - prev.basePremiumPPM;
 
 		await MintingUpdateV2.create({
@@ -149,7 +148,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 				collateralDecimals: position.collateralDecimals,
 				size: collateral,
 				price: price,
-				minted: minted,
+				minted: BigInt(0),
 				sizeAdjusted,
 				priceAdjusted,
 				mintedAdjusted,
@@ -159,7 +158,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 				reserveContribution: position.reserveContribution,
 				feeTimeframe: getFeeTimeframe(),
 				feePPM: parseInt(getFeePPM().toString()),
-				feePaid: mintedAdjusted > 0n ? getFeePaid(mintedAdjusted) : 0n,
+				feePaid: BigInt(0),
 			},
 		});
 	}
