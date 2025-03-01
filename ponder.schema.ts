@@ -205,6 +205,8 @@ export default createSchema((p) => ({
 		limitForClones: p.bigint(), // global limit for position and their clones
 		availableForClones: p.bigint(), // for positions or clones for further clones
 		availableForMinting: p.bigint(), // "unlocked" to mint for position
+		fixedAnnualRatePPM: p.int(),
+		principal: p.bigint(),
 	}),
 
 	MintingUpdateV2: p.createTable({

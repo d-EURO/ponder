@@ -35,6 +35,12 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		functionName: 'currentRatePPM',
 	});
 
+	const principal = await client.readContract({
+		abi: PositionABI,
+		address: positionAddress,
+		functionName: 'principal',
+	});
+
 	const position = await PositionV2.findUnique({
 		id: positionAddress.toLowerCase(),
 	});
@@ -50,6 +56,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			availableForClones,
 			cooldown: BigInt(cooldown),
 			closed: collateral == 0n,
+			principal,
 		},
 	});
 
