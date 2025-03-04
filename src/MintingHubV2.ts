@@ -8,6 +8,8 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 
 	// ------------------------------------------------------------------
 	// FROM EVENT & TRANSACTION
+
+	// event PositionOpened(address indexed owner, address indexed position, address original, address collateral);
 	const { owner, position, original, collateral } = event.args;
 
 	const created: bigint = event.block.timestamp;
@@ -65,6 +67,12 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		abi: PositionABI,
 		address: position,
 		functionName: 'limit',
+	});
+
+	const fixedAnnualRatePPM = await client.readContract({
+		abi: PositionABI,
+		address: position,
+		functionName: 'fixedAnnualRatePPM',
 	});
 
 	// ------------------------------------------------------------------
@@ -140,6 +148,11 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		functionName: 'cooldown',
 	});
 
+	const principal = await client.readContract({
+		abi: PositionABI,
+		address: position,
+		functionName: 'principal',
+	});
 
 	// ------------------------------------------------------------------
 	// ------------------------------------------------------------------
@@ -207,6 +220,9 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 			limitForClones,
 			availableForClones,
 			availableForMinting,
+
+			fixedAnnualRatePPM,
+			principal,
 		},
 	});
 
