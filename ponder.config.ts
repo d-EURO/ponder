@@ -9,6 +9,7 @@ import {
 	PositionRollerABI,
 	PositionV2ABI,
 	SavingsABI,
+	FrontendGatewayABI,
 } from '@deuro/eurocoin';
 
 // mainnet (default) or polygon
@@ -99,6 +100,13 @@ export default createConfig({
 			network: chain.name,
 			abi: PositionRollerABI,
 			address: ADDR.roller as Address,
+			startBlock: config.startMintingHubV2,
+			maxBlockRange: config.blockrange,
+		},
+		FrontendGateway: {
+			network: chain.name,
+			abi: FrontendGatewayABI,
+			address: ADDR.frontendGateway as Address,
 			startBlock: config.startMintingHubV2,
 			maxBlockRange: config.blockrange,
 		},

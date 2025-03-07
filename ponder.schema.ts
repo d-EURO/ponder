@@ -267,6 +267,20 @@ export default createSchema((p) => ({
 	}),
 
 	// -------------------------------------------------------------------------
+	// FRONTEND GATEWAY
+	// -------------------------------------------------------------------------
+	FrontendCodeRegistered: p.createTable({
+		id: p.string(),
+		owner: p.string(),
+		frontendCode: p.string(),
+	}),
+
+	FrontendCodeMapping: p.createTable({
+		id: p.string(),
+		frontendCodes: p.string().list(),
+	}),
+
+	// -------------------------------------------------------------------------
 	// COMMON
 	// -------------------------------------------------------------------------
 	ActiveUser: p.createTable({
