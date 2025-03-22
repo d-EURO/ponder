@@ -20,8 +20,8 @@ export const ADDR = ADDRESS[chain.id]!;
 export const CONFIG = {
 	[mainnet.id]: {
 		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
-		startStablecoin: 21972747,
-		startMintingHubV2: 21972747,
+		startStablecoin: 21932747,
+		startMintingHubV2: 21932747,
 		blockrange: undefined,
 		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
