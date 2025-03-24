@@ -280,6 +280,81 @@ export default createSchema((p) => ({
 		frontendCodes: p.string().list(),
 	}),
 
+	InvestRewardAdded: p.createTable({
+		id: p.string(),
+		frontendCode: p.string(),
+		user: p.string(),
+		amount: p.bigint(),
+		reward: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
+	RedeemRewardAdded: p.createTable({
+		id: p.string(),
+		frontendCode: p.string(),
+		user: p.string(),
+		amount: p.bigint(),
+		reward: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
+	UnwrapAndSellRewardAdded: p.createTable({
+		id: p.string(),
+		frontendCode: p.string(),	
+		user: p.string(),
+		amount: p.bigint(),
+		reward: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
+	SavingsRewardAdded: p.createTable({
+		id: p.string(),
+		frontendCode: p.string(),
+		user: p.string(),
+		interest: p.bigint(),
+		reward: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
+	PositionRewardAdded: p.createTable({
+		id: p.string(),
+		frontendCode: p.string(),
+		user: p.string(),
+		position: p.string(),
+		amount: p.bigint(),
+		reward: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
+	FrontendRewardsMapping: p.createTable({
+		id: p.string(),
+		totalReffered: p.int(),
+		referred: p.string().list(),
+		totalVolume: p.bigint(),
+	}),
+
+	FrontendRewardsVolumeMapping: p.createTable({
+		id: p.string(),
+		frontendCode: p.string(),
+		referred: p.string(),
+		volume: p.bigint(),
+		timestamp: p.bigint(),
+	}),
+
+	FrontendBonusHistoryMapping: p.createTable({
+		id: p.string(),
+		frontendCode: p.string(),
+		payout: p.bigint(),
+		source: p.string(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
 	// -------------------------------------------------------------------------
 	// COMMON
 	// -------------------------------------------------------------------------
