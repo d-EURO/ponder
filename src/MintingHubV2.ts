@@ -154,6 +154,12 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		functionName: 'principal',
 	});
 
+	const virtualPrice = await client.readContract({
+		abi: PositionABI,
+		address: position,
+		functionName: 'virtualPrice',
+	});
+
 	// ------------------------------------------------------------------
 	// ------------------------------------------------------------------
 	// ------------------------------------------------------------------
@@ -223,6 +229,7 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 
 			fixedAnnualRatePPM,
 			principal,
+			virtualPrice,
 		},
 	});
 
