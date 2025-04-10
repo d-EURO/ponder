@@ -12,7 +12,6 @@ ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) =
 			owner,
 			frontendCode,
 			txHash: event.transaction.hash,
-			timestamp: event.block.timestamp,
 			created: event.block.timestamp,
 		},
 	});
@@ -40,7 +39,6 @@ ponder.on('FrontendGateway:FrontendCodeTransferred', async ({ event, context }) 
 			owner: to,
 			frontendCode,
 			txHash: event.transaction.hash,
-			timestamp: event.block.timestamp,
 		},
 	});
 

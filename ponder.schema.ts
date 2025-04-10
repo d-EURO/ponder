@@ -276,7 +276,6 @@ export default createSchema((p) => ({
 		owner: p.string(),
 		frontendCode: p.string(),
 		txHash: p.string(),
-		timestamp: p.bigint(),
 	}),
 
 	FrontendCodeMapping: p.createTable({
