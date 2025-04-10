@@ -11,6 +11,8 @@ ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) =
 		data: {
 			owner,
 			frontendCode,
+			txHash: event.transaction.hash,
+			created: event.block.timestamp,
 		},
 	});
 
@@ -33,8 +35,10 @@ ponder.on('FrontendGateway:FrontendCodeTransferred', async ({ event, context }) 
 	await FrontendCodeRegistered.create({
 		id: `${to}-${event.block.number.toString()}`,
 		data: {
+			created: event.block.timestamp,
 			owner: to,
 			frontendCode,
+			txHash: event.transaction.hash,
 		},
 	});
 

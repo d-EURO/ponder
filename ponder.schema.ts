@@ -272,8 +272,10 @@ export default createSchema((p) => ({
 	// -------------------------------------------------------------------------
 	FrontendCodeRegistered: p.createTable({
 		id: p.string(),
+		created: p.bigint(),
 		owner: p.string(),
 		frontendCode: p.string(),
+		txHash: p.string(),
 	}),
 
 	FrontendCodeMapping: p.createTable({
