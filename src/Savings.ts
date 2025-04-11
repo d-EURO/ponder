@@ -39,7 +39,7 @@ ponder.on('Savings:RateChanged', async ({ event, context }) => {
 
 ponder.on('Savings:Saved', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsSaved, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem } = context.db;
+	const { SavingsSaved, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } = context.db;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -104,11 +104,29 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 			amount: current.amount + amount,
 		}),
 	});
+
+	const [amountSaved] = await client.readContract({
+		abi: SavingsABI,
+		address: ADDR.savingsGateway,
+		functionName: "savings",
+		args: [account],
+	});
+
+	await SavingsUserLeaderboard.upsert({
+		id: account,
+		create: {
+			amountSaved,
+			interestReceived: 0n,
+		},
+		update: () => ({
+			amountSaved,
+		}),
+	});
 });
 
 ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsInterest, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem } = context.db;
+	const { SavingsInterest, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } = context.db;
 	const { interest } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -173,11 +191,30 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 			amount: current.amount + interest,
 		}),
 	});
+
+	const [amountSaved] = await client.readContract({
+		abi: SavingsABI,
+		address: ADDR.savingsGateway,
+		functionName: "savings",
+		args: [account],
+	});
+
+	await SavingsUserLeaderboard.upsert({
+		id: account,
+		create: {
+			amountSaved,
+			interestReceived: 0n,
+		},
+		update: ({ current }) => ({
+			amountSaved,
+			interestReceived: current.interestReceived + interest,
+		}),
+	});
 });
 
 ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsWithdrawn, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem } = context.db;
+	const { SavingsWithdrawn, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } = context.db;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -240,6 +277,24 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		},
 		update: ({ current }) => ({
 			amount: current.amount + amount,
+		}),
+	});
+
+	const [amountSaved] = await client.readContract({
+		abi: SavingsABI,
+		address: ADDR.savingsGateway,
+		functionName: "savings",
+		args: [account],
+	});
+
+	await SavingsUserLeaderboard.upsert({
+		id: account,
+		create: {
+			amountSaved,
+			interestReceived: 0n,
+		},
+		update: () => ({
+			amountSaved,
 		}),
 	});
 });
