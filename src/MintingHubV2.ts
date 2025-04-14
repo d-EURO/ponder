@@ -160,6 +160,14 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		functionName: 'virtualPrice',
 	});
 
+	const collateralRequirement = await client.readContract({
+		abi: PositionABI,
+		address: position,
+		functionName: 'getCollateralRequirement',
+	});
+
+	const actualVirtualPrice = collateralBalance > 0n ? (collateralRequirement * 10n ** 18n) / collateralBalance : price;
+
 	// ------------------------------------------------------------------
 	// ------------------------------------------------------------------
 	// ------------------------------------------------------------------
@@ -230,6 +238,7 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 			fixedAnnualRatePPM,
 			principal,
 			virtualPrice,
+			actualVirtualPrice,
 		},
 	});
 
