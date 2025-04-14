@@ -159,6 +159,12 @@ export default createSchema((p) => ({
 		amount: p.bigint(),
 	}),
 
+	SavingsUserLeaderboard: p.createTable({
+		id: p.string(),
+		amountSaved: p.bigint(),
+		interestReceived: p.bigint(),
+	}),
+
 	RollerRolled: p.createTable({
 		id: p.string(),
 		created: p.bigint(),
@@ -207,6 +213,7 @@ export default createSchema((p) => ({
 		availableForMinting: p.bigint(), // "unlocked" to mint for position
 		fixedAnnualRatePPM: p.int(),
 		principal: p.bigint(),
+		virtualPrice: p.bigint(),
 	}),
 
 	MintingUpdateV2: p.createTable({
@@ -271,8 +278,10 @@ export default createSchema((p) => ({
 	// -------------------------------------------------------------------------
 	FrontendCodeRegistered: p.createTable({
 		id: p.string(),
+		created: p.bigint(),
 		owner: p.string(),
 		frontendCode: p.string(),
+		txHash: p.string(),
 	}),
 
 	FrontendCodeMapping: p.createTable({

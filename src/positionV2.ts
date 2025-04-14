@@ -41,6 +41,13 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		functionName: 'principal',
 	});
 
+
+	const virtualPrice = await client.readContract({
+		abi: PositionABI,
+		address: positionAddress,
+		functionName: 'virtualPrice',
+	});
+
 	const position = await PositionV2.findUnique({
 		id: positionAddress.toLowerCase(),
 	});
@@ -57,6 +64,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			cooldown: BigInt(cooldown),
 			closed: collateral == 0n,
 			principal,
+			virtualPrice,
 		},
 	});
 
