@@ -214,6 +214,7 @@ export default createSchema((p) => ({
 		fixedAnnualRatePPM: p.int(),
 		principal: p.bigint(),
 		virtualPrice: p.bigint(),
+		actualVirtualPrice: p.bigint(),
 	}),
 
 	MintingUpdateV2: p.createTable({
@@ -311,7 +312,7 @@ export default createSchema((p) => ({
 
 	UnwrapAndSellRewardAdded: p.createTable({
 		id: p.string(),
-		frontendCode: p.string(),	
+		frontendCode: p.string(),
 		user: p.string(),
 		amount: p.bigint(),
 		reward: p.bigint(),

@@ -41,12 +41,19 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		functionName: 'principal',
 	});
 
-
 	const virtualPrice = await client.readContract({
 		abi: PositionABI,
 		address: positionAddress,
 		functionName: 'virtualPrice',
 	});
+
+	const collateralRequirement = await client.readContract({
+		abi: PositionABI,
+		address: positionAddress,
+		functionName: 'getCollateralRequirement',
+	});
+
+	const actualVirtualPrice = collateral > 0n ? (collateralRequirement * 10n ** 18n) / collateral : price;
 
 	const position = await PositionV2.findUnique({
 		id: positionAddress.toLowerCase(),
@@ -65,6 +72,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			closed: collateral == 0n,
 			principal,
 			virtualPrice,
+			actualVirtualPrice,
 		},
 	});
 
