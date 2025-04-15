@@ -109,6 +109,7 @@ export default createSchema((p) => ({
 		rate: p.int(),
 		total: p.bigint(),
 		balance: p.bigint(),
+		frontendCode: p.string().optional(),
 	}),
 
 	SavingsSavedMapping: p.createTable({
@@ -311,7 +312,7 @@ export default createSchema((p) => ({
 
 	UnwrapAndSellRewardAdded: p.createTable({
 		id: p.string(),
-		frontendCode: p.string(),	
+		frontendCode: p.string(),
 		user: p.string(),
 		amount: p.bigint(),
 		reward: p.bigint(),
