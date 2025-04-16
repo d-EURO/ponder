@@ -109,6 +109,7 @@ export default createSchema((p) => ({
 		rate: p.int(),
 		total: p.bigint(),
 		balance: p.bigint(),
+		frontendCode: p.string().optional(),
 	}),
 
 	SavingsSavedMapping: p.createTable({

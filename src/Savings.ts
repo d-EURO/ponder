@@ -1,7 +1,7 @@
 import { ponder } from '@/generated';
-import { SavingsABI } from '@deuro/eurocoin';
+import { SavingsABI, SavingsGatewayABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
-import { Address } from 'viem';
+import { Address, decodeFunctionData } from 'viem';
 
 ponder.on('Savings:RateProposed', async ({ event, context }) => {
 	const { SavingsRateProposed } = context.db;
@@ -39,7 +39,8 @@ ponder.on('Savings:RateChanged', async ({ event, context }) => {
 
 ponder.on('Savings:Saved', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsSaved, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } = context.db;
+	const { SavingsSaved, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } =
+		context.db;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -48,6 +49,15 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		address: ADDR.savingsGateway,
 		functionName: 'currentRatePPM',
 	});
+
+	let frontendCode: string | undefined;
+	if (event.transaction.to === ADDR.savingsGateway) {
+		const { args } = decodeFunctionData({
+			abi: SavingsGatewayABI,
+			data: event.transaction.input,
+		});
+		frontendCode = args.at(-1) as string;
+	}
 
 	// map indexing
 	await SavingsSavedMapping.upsert({
@@ -90,6 +100,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 			rate: ratePPM,
 			total: latestSaved ? latestSaved.amount : amount,
 			balance,
+			frontendCode,
 		},
 	});
 
@@ -108,7 +119,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 	const [amountSaved] = await client.readContract({
 		abi: SavingsABI,
 		address: ADDR.savingsGateway,
-		functionName: "savings",
+		functionName: 'savings',
 		args: [account],
 	});
 
