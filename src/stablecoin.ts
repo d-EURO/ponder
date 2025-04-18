@@ -1,5 +1,6 @@
 import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
+import { ADDR } from '../ponder.config';
 
 ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	const { DEPS, ActiveUser, Ecosystem } = context.db;
@@ -16,7 +17,7 @@ ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	});
 
 	await DEPS.upsert({
-		id: event.log.address,
+		id: ADDR.decentralizedEURO,
 		create: {
 			profits: event.args.amount,
 			loss: 0n,
@@ -53,7 +54,7 @@ ponder.on('Stablecoin:Loss', async ({ event, context }) => {
 	});
 
 	await DEPS.upsert({
-		id: event.log.address,
+		id: ADDR.decentralizedEURO,
 		create: {
 			profits: 0n,
 			loss: event.args.amount,
