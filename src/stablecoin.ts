@@ -179,12 +179,13 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
 		await Mint.create({
-			id: `${event.args.to}-mint-${event.block.number}`,
+			id: `${event.args.to}-mint-${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				to: event.args.to,
 				value: event.args.value,
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
+				txHash: event.transaction.hash,
 			},
 		});
 
@@ -235,12 +236,13 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	// emit Transfer(account, address(0), amount);
 	if (event.args.to === zeroAddress) {
 		await Burn.create({
-			id: `${event.args.from}-burn-${event.block.number}`,
+			id: `${event.args.from}-burn-${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				from: event.args.from,
 				value: event.args.value,
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
+				txHash: event.transaction.hash,
 			},
 		});
 
