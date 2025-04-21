@@ -10,6 +10,7 @@ export default createSchema((p) => ({
 		value: p.bigint(),
 		blockheight: p.bigint(),
 		timestamp: p.bigint(),
+		txHash: p.string(),
 	}),
 
 	Burn: p.createTable({
@@ -18,6 +19,7 @@ export default createSchema((p) => ({
 		value: p.bigint(),
 		blockheight: p.bigint(),
 		timestamp: p.bigint(),
+		txHash: p.string(),
 	}),
 
 	MintBurnAddressMapper: p.createTable({

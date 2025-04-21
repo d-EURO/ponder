@@ -1,8 +1,9 @@
 import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
+import { ADDR } from '../ponder.config';
 
 ponder.on('Equity:Trade', async ({ event, context }) => {
-	const { Trade, VotingPower, TradeChart, ActiveUser, Ecosystem } = context.db;
+	const { Trade, VotingPower, TradeChart, ActiveUser, Ecosystem, DEPS } = context.db;
 	const trader: Address = event.args.who;
 	const amount: bigint = event.args.totPrice;
 	const shares: bigint = event.args.amount;
@@ -125,6 +126,19 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 		},
 		update: () => ({
 			lastActiveTime: event.block.timestamp,
+		}),
+	});
+
+	const feeCollected = amount - (amount * 980n) / 1000n;
+	await DEPS.upsert({
+		id: ADDR.decentralizedEURO,
+		create: {
+			profits: feeCollected,
+			loss: 0n,
+			reserve: 0n,
+		},
+		update: ({ current }) => ({
+			profits: current.profits + feeCollected,
 		}),
 	});
 });

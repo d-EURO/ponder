@@ -1,5 +1,6 @@
 import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
+import { ADDR } from '../ponder.config';
 
 ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	const { DEPS, ActiveUser, Ecosystem } = context.db;
@@ -16,7 +17,7 @@ ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	});
 
 	await DEPS.upsert({
-		id: event.log.address,
+		id: ADDR.decentralizedEURO,
 		create: {
 			profits: event.args.amount,
 			loss: 0n,
@@ -53,7 +54,7 @@ ponder.on('Stablecoin:Loss', async ({ event, context }) => {
 	});
 
 	await DEPS.upsert({
-		id: event.log.address,
+		id: ADDR.decentralizedEURO,
 		create: {
 			profits: 0n,
 			loss: event.args.amount,
@@ -178,12 +179,13 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
 		await Mint.create({
-			id: `${event.args.to}-mint-${event.block.number}`,
+			id: `${event.args.to}-mint-${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				to: event.args.to,
 				value: event.args.value,
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
+				txHash: event.transaction.hash,
 			},
 		});
 
@@ -234,12 +236,13 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	// emit Transfer(account, address(0), amount);
 	if (event.args.to === zeroAddress) {
 		await Burn.create({
-			id: `${event.args.from}-burn-${event.block.number}`,
+			id: `${event.args.from}-burn-${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				from: event.args.from,
 				value: event.args.value,
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
+				txHash: event.transaction.hash,
 			},
 		});
 
