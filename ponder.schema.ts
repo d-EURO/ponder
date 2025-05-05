@@ -349,6 +349,9 @@ export default createSchema((p) => ({
 		id: p.string(),
 		totalReffered: p.int(),
 		referred: p.string().list(),
+		loansVolume: p.bigint(),
+		investVolume: p.bigint(),
+		savingsVolume: p.bigint(),
 		totalVolume: p.bigint(),
 	}),
 
