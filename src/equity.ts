@@ -18,6 +18,7 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 			shares,
 			price,
 			time,
+			txHash: event.transaction.hash,
 		},
 	});
 
