@@ -370,6 +370,36 @@ export default createSchema((p) => ({
 	}),
 
 	// -------------------------------------------------------------------------
+	// BRIDGES
+	// -------------------------------------------------------------------------
+	BridgeEURS: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeVEUR: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEURC: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	// -------------------------------------------------------------------------
 	// COMMON
 	// -------------------------------------------------------------------------
 	ActiveUser: p.createTable({

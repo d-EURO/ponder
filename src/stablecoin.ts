@@ -163,7 +163,7 @@ ponder.on('Stablecoin:MinterDenied', async ({ event, context }) => {
 });
 
 ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
-	const { Mint, Burn, MintBurnAddressMapper, ActiveUser, Ecosystem } = context.db;
+	const { Mint, Burn, MintBurnAddressMapper, ActiveUser, Ecosystem, BridgeEURC, BridgeEURS, BridgeVEUR } = context.db;
 
 	await Ecosystem.upsert({
 		id: 'Stablecoin:TransferCounter',
@@ -288,5 +288,48 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				lastActiveTime: event.block.timestamp,
 			}),
 		});
+	}
+
+	// Capture bridge transactions
+	switch (event.transaction.to) {
+		case ADDR.bridgeEURC:
+			await BridgeEURC.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
+				data: {
+					swapper: event.transaction.from,
+					txHash: event.transaction.hash,
+					amount: event.args.value,
+					isMint: event.args.from === zeroAddress,
+					timestamp: event.block.timestamp,
+				},
+			});
+			break;
+		case ADDR.bridgeEURS:
+			await BridgeEURS.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
+				data: {
+					swapper: event.transaction.from,
+					txHash: event.transaction.hash,
+					amount: event.args.value,
+					isMint: event.args.from === zeroAddress,
+					timestamp: event.block.timestamp,
+				},
+			});
+			break;
+		case ADDR.bridgeVEUR:
+			await BridgeVEUR.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
+				data: {
+					swapper: event.transaction.from,
+					txHash: event.transaction.hash,
+					amount: event.args.value,
+					isMint: event.args.from === zeroAddress,
+					timestamp: event.block.timestamp,
+				},
+			});
+			break;
+		default:
+			// no action
+			break;
 	}
 });
