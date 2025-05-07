@@ -72,6 +72,7 @@ export default createSchema((p) => ({
 		shares: p.bigint(),
 		price: p.bigint(),
 		time: p.bigint(),
+		txHash: p.string(),
 	}),
 
 	TradeChart: p.createTable({
@@ -348,6 +349,9 @@ export default createSchema((p) => ({
 		id: p.string(),
 		totalReffered: p.int(),
 		referred: p.string().list(),
+		loansVolume: p.bigint(),
+		investVolume: p.bigint(),
+		savingsVolume: p.bigint(),
 		totalVolume: p.bigint(),
 	}),
 
@@ -366,6 +370,72 @@ export default createSchema((p) => ({
 		source: p.string(),
 		timestamp: p.bigint(),
 		txHash: p.string(),
+	}),
+
+	// -------------------------------------------------------------------------
+	// BRIDGES
+	// -------------------------------------------------------------------------
+	BridgeEURS: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeVEUR: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEURC: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEURR: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEUROP: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEURI: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEURE: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
 	}),
 
 	// -------------------------------------------------------------------------
