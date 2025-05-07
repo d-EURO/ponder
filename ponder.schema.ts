@@ -73,6 +73,7 @@ export default createSchema((p) => ({
 		price: p.bigint(),
 		time: p.bigint(),
 		txHash: p.string(),
+		frontendCode: p.string().optional(),
 	}),
 
 	TradeChart: p.createTable({
