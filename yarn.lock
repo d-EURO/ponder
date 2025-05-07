@@ -55,10 +55,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@deuro/eurocoin@1.0.12":
-  version "1.0.12"
-  resolved "https://registry.yarnpkg.com/@deuro/eurocoin/-/eurocoin-1.0.12.tgz#e78ffa59f0dfe11bcb9e3a6d21badcabcfbb7d5c"
-  integrity sha512-UBJ2hWxnhvfWDEqYvrSzdNG6pVrFDtA7q4maHFT5sDi/99Zf1N4T3kzyQTjWOQXXTs72Ku+81tV9z5gn5c/ybQ==
+"@deuro/eurocoin@1.0.13":
+  version "1.0.13"
+  resolved "https://registry.yarnpkg.com/@deuro/eurocoin/-/eurocoin-1.0.13.tgz#05e9c6ff13d4bfcaa8ad14aa377b2815709cfc80"
+  integrity sha512-NrAHpgLrlx662BgTcgkxBXNvNPl+bUeQPaVGwOsDrJXyVsJJVfpBwPcqZ+CaOVUEZfwDePYTWZe2e82bVqRkTQ==
   dependencies:
     "@flashbots/ethers-provider-bundle" "^1.0.0"
     hardhat-abi-exporter "^2.10.0"

@@ -402,6 +402,42 @@ export default createSchema((p) => ({
 		timestamp: p.bigint(),
 	}),
 
+	BridgeEURR: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEUROP: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEURI: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
+	BridgeEURE: p.createTable({
+		id: p.string(),
+		swapper: p.string(),
+		txHash: p.string(),
+		amount: p.bigint(),
+		isMint: p.boolean(),
+		timestamp: p.bigint(),
+	}),
+
 	// -------------------------------------------------------------------------
 	// COMMON
 	// -------------------------------------------------------------------------

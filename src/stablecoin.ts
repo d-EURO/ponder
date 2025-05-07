@@ -163,7 +163,20 @@ ponder.on('Stablecoin:MinterDenied', async ({ event, context }) => {
 });
 
 ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
-	const { Mint, Burn, MintBurnAddressMapper, ActiveUser, Ecosystem, BridgeEURC, BridgeEURS, BridgeVEUR } = context.db;
+	const {
+		Mint,
+		Burn,
+		MintBurnAddressMapper,
+		ActiveUser,
+		Ecosystem,
+		BridgeEURC,
+		BridgeEURS,
+		BridgeVEUR,
+		BridgeEURR,
+		BridgeEUROP,
+		BridgeEURI,
+		BridgeEURE,
+	} = context.db;
 
 	await Ecosystem.upsert({
 		id: 'Stablecoin:TransferCounter',
@@ -291,41 +304,55 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	}
 
 	// Capture bridge transactions
-	switch (event.transaction.to) {
-		case ADDR.bridgeEURC:
+	const bridgeData = {
+		swapper: event.transaction.from,
+		txHash: event.transaction.hash,
+		amount: event.args.value,
+		isMint: event.args.from === zeroAddress,
+		timestamp: event.block.timestamp,
+	};
+
+	switch (event.transaction.to?.toLowerCase()) {
+		case ADDR.bridgeEURC.toLowerCase():
 			await BridgeEURC.create({
 				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: {
-					swapper: event.transaction.from,
-					txHash: event.transaction.hash,
-					amount: event.args.value,
-					isMint: event.args.from === zeroAddress,
-					timestamp: event.block.timestamp,
-				},
+				data: bridgeData,
 			});
 			break;
-		case ADDR.bridgeEURS:
+		case ADDR.bridgeEURS.toLowerCase():
 			await BridgeEURS.create({
 				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: {
-					swapper: event.transaction.from,
-					txHash: event.transaction.hash,
-					amount: event.args.value,
-					isMint: event.args.from === zeroAddress,
-					timestamp: event.block.timestamp,
-				},
+				data: bridgeData,
 			});
 			break;
-		case ADDR.bridgeVEUR:
+		case ADDR.bridgeVEUR.toLowerCase():
 			await BridgeVEUR.create({
 				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: {
-					swapper: event.transaction.from,
-					txHash: event.transaction.hash,
-					amount: event.args.value,
-					isMint: event.args.from === zeroAddress,
-					timestamp: event.block.timestamp,
-				},
+				data: bridgeData,
+			});
+			break;
+		case ADDR.bridgeEURR.toLowerCase():
+			await BridgeEURR.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
+				data: bridgeData,
+			});
+			break;
+		case ADDR.bridgeEUROP.toLowerCase():
+			await BridgeEUROP.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
+				data: bridgeData,
+			});
+			break;
+		case ADDR.bridgeEURI.toLowerCase():
+			await BridgeEURI.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
+				data: bridgeData,
+			});
+			break;
+		case ADDR.bridgeEURE.toLowerCase():
+			await BridgeEURE.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
+				data: bridgeData,
 			});
 			break;
 		default:
