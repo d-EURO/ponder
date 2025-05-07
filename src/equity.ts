@@ -12,7 +12,7 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 	const time: bigint = event.block.timestamp;
 	const txHash = event.transaction.hash;
 
-	let refCode: string | undefined;
+	let frontendCode: string | undefined;
 	const isFrontendGateway = event.transaction.to?.toLowerCase() === ADDR.frontendGateway.toLowerCase();
 	if (isFrontendGateway) {
 		const txRaw = (await context.client.request({
@@ -25,7 +25,7 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 			data: txRaw.input,
 		});
 
-		refCode = decoded.args.at(-1)?.toString();
+		frontendCode = decoded.args.at(-1)?.toString();
 	}
 
 	await Trade.create({
@@ -37,7 +37,7 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 			price,
 			time,
 			txHash,
-			refCode,
+			frontendCode,
 		},
 	});
 
