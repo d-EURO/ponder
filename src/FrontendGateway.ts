@@ -85,6 +85,9 @@ ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
 			totalReffered: 1,
 			referred: [user],
 			totalVolume: reward,
+			loansVolume: 0n,
+			investVolume: 0n,
+			savingsVolume: 0n,
 		},
 		update: (c) => {
 			const referred = c.current.referred.includes(user) ? c.current.referred : [...c.current.referred, user];
@@ -92,6 +95,7 @@ ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
 				totalReffered: referred.length,
 				referred,
 				totalVolume: c.current.totalVolume + reward,
+				investVolume: c.current.investVolume + reward,
 			};
 		},
 	});
@@ -144,6 +148,9 @@ ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
 			totalReffered: 1,
 			referred: [user],
 			totalVolume: reward,
+			loansVolume: 0n,
+			investVolume: 0n,
+			savingsVolume: 0n,
 		},
 		update: (c) => {
 			const referred = c.current.referred.includes(user) ? c.current.referred : [...c.current.referred, user];
@@ -151,6 +158,7 @@ ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
 				totalReffered: referred.length,
 				referred,
 				totalVolume: c.current.totalVolume + reward,
+				investVolume: c.current.investVolume + reward,
 			};
 		},
 	});
@@ -203,6 +211,9 @@ ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context })
 			totalReffered: 1,
 			referred: [user],
 			totalVolume: reward,
+			loansVolume: 0n,
+			investVolume: 0n,
+			savingsVolume: 0n,
 		},
 		update: (c) => {
 			const referred = c.current.referred.includes(user) ? c.current.referred : [...c.current.referred, user];
@@ -210,6 +221,7 @@ ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context })
 				totalReffered: referred.length,
 				referred,
 				totalVolume: c.current.totalVolume + reward,
+				investVolume: c.current.investVolume + reward,
 			};
 		},
 	});
@@ -262,6 +274,9 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 			totalReffered: 1,
 			referred: [saver],
 			totalVolume: reward,
+			loansVolume: 0n,
+			investVolume: 0n,
+			savingsVolume: 0n,
 		},
 		update: (c) => {
 			const referred = c.current.referred.includes(saver) ? c.current.referred : [...c.current.referred, saver];
@@ -269,6 +284,7 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 				totalReffered: referred.length,
 				referred,
 				totalVolume: c.current.totalVolume + reward,
+				savingsVolume: c.current.savingsVolume + reward,
 			};
 		},
 	});
@@ -300,7 +316,8 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 });
 
 ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
-	const { PositionRewardAdded, FrontendRewardsMapping, FrontendRewardsVolumeMapping, PositionV2, FrontendBonusHistoryMapping } = context.db;
+	const { PositionRewardAdded, FrontendRewardsMapping, FrontendRewardsVolumeMapping, PositionV2, FrontendBonusHistoryMapping } =
+		context.db;
 	const { amount, reward, frontendCode, position } = event.args;
 	const { client } = context;
 
@@ -333,6 +350,9 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 			referred: [owner],
 			totalReffered: 1,
 			totalVolume: reward,
+			loansVolume: 0n,
+			investVolume: 0n,
+			savingsVolume: 0n,
 		},
 		update: (c) => {
 			const referred = c.current.referred.includes(owner) ? c.current.referred : [...c.current.referred, owner];
@@ -340,6 +360,7 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 				referred,
 				totalReffered: referred.length,
 				totalVolume: c.current.totalVolume + reward,
+				loansVolume: c.current.loansVolume + reward,
 			};
 		},
 	});

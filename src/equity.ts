@@ -1,6 +1,7 @@
 import { ponder } from '@/generated';
-import { Address, zeroAddress } from 'viem';
+import { Address, decodeFunctionData, RpcTransaction, zeroAddress } from 'viem';
 import { ADDR } from '../ponder.config';
+import { FrontendGatewayABI } from '@deuro/eurocoin';
 
 ponder.on('Equity:Trade', async ({ event, context }) => {
 	const { Trade, VotingPower, TradeChart, ActiveUser, Ecosystem, DEPS } = context.db;
@@ -9,6 +10,23 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 	const shares: bigint = event.args.amount;
 	const price: bigint = event.args.newprice;
 	const time: bigint = event.block.timestamp;
+	const txHash = event.transaction.hash;
+
+	let frontendCode: string | undefined;
+	const isFrontendGateway = event.transaction.to?.toLowerCase() === ADDR.frontendGateway.toLowerCase();
+	if (isFrontendGateway) {
+		const txRaw = (await context.client.request({
+			method: 'eth_getTransactionByHash',
+			params: [txHash],
+		})) as RpcTransaction;
+
+		const decoded = decodeFunctionData({
+			abi: FrontendGatewayABI,
+			data: txRaw.input,
+		});
+
+		frontendCode = decoded.args.at(-1)?.toString();
+	}
 
 	await Trade.create({
 		id: event.args.who + '_' + time.toString(),
@@ -18,6 +36,8 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 			shares,
 			price,
 			time,
+			txHash,
+			frontendCode,
 		},
 	});
 
