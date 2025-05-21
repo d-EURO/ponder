@@ -9,7 +9,7 @@ ponder.on('Savings:RateProposed', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsRateProposed.create({
-		id: `${who.toLowerCase()}-${event.block.number}`,
+		id: `${who.toLowerCase()}-${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -27,7 +27,7 @@ ponder.on('Savings:RateChanged', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsRateChanged.create({
-		id: event.block.number.toString(),
+		id: `${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -90,7 +90,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsSaved.create({
-		id: `${account}-${event.block.number.toString()}`,
+		id: `${account}-${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -137,7 +137,8 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 
 ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsInterest, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } = context.db;
+	const { SavingsInterest, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } =
+		context.db;
 	const { interest } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -178,7 +179,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsInterest.create({
-		id: `${account}-${event.block.number.toString()}`,
+		id: `${account}-${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -206,7 +207,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 	const [amountSaved] = await client.readContract({
 		abi: SavingsABI,
 		address: ADDR.savingsGateway,
-		functionName: "savings",
+		functionName: 'savings',
 		args: [account],
 	});
 
@@ -225,7 +226,8 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 
 ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsWithdrawn, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } = context.db;
+	const { SavingsWithdrawn, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } =
+		context.db;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -266,7 +268,7 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsWithdrawn.create({
-		id: `${account}-${event.block.number.toString()}`,
+		id: `${account}-${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -294,7 +296,7 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 	const [amountSaved] = await client.readContract({
 		abi: SavingsABI,
 		address: ADDR.savingsGateway,
-		functionName: "savings",
+		functionName: 'savings',
 		args: [account],
 	});
 
