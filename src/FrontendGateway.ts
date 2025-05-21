@@ -7,7 +7,7 @@ ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) =
 
 	// flat indexing
 	await FrontendCodeRegistered.create({
-		id: `${owner}-${event.block.number.toString()}`,
+		id: `${owner}-${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			owner,
 			frontendCode,
@@ -33,7 +33,7 @@ ponder.on('FrontendGateway:FrontendCodeTransferred', async ({ event, context }) 
 
 	// flat indexing
 	await FrontendCodeRegistered.create({
-		id: `${to}-${event.block.number.toString()}`,
+		id: `${to}-${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			owner: to,

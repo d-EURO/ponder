@@ -6,7 +6,7 @@ ponder.on('Roller:Roll', async ({ event, context }) => {
 
 	// flat indexing
 	await RollerRolled.create({
-		id: `${source.toLowerCase()}-${target.toLowerCase()}-${event.block.number}`,
+		id: `${source.toLowerCase()}-${target.toLowerCase()}-${event.block.number.toString()}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
