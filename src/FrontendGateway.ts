@@ -1,5 +1,6 @@
 import { ponder } from '@/generated';
 import { PositionV2ABI } from '@deuro/eurocoin';
+import { getRandomHex } from './utils/randomString';
 
 ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) => {
 	const { FrontendCodeRegistered, FrontendCodeMapping } = context.db;
@@ -7,7 +8,7 @@ ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) =
 
 	// flat indexing
 	await FrontendCodeRegistered.create({
-		id: `${owner}-${event.block.number.toString()}-${event.log.logIndex}`,
+		id: `${owner}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
 		data: {
 			owner,
 			frontendCode,
@@ -33,7 +34,7 @@ ponder.on('FrontendGateway:FrontendCodeTransferred', async ({ event, context }) 
 
 	// flat indexing
 	await FrontendCodeRegistered.create({
-		id: `${to}-${event.block.number.toString()}-${event.log.logIndex}`,
+		id: `${to}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
 		data: {
 			created: event.block.timestamp,
 			owner: to,
