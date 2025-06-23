@@ -387,7 +387,7 @@ ponder.on('MintingHubV2:ChallengeAverted', async ({ event, context }) => {
 			bidder: event.transaction.from,
 			created: event.block.timestamp,
 			bidType: 'Averted',
-			bid: BigInt(_amount),
+			bid: BigInt(_amount * 1e18),
 			price: liqPrice,
 			filledSize: event.args.size,
 			acquiredCollateral: 0n,

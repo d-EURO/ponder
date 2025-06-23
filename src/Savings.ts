@@ -1,5 +1,5 @@
 import { ponder } from '@/generated';
-import { SavingsABI, SavingsGatewayABI } from '@deuro/eurocoin';
+import { ERC20ABI, SavingsABI, SavingsGatewayABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
 import { Address, decodeFunctionData } from 'viem';
 import { getRandomHex } from './utils/randomString';
@@ -40,8 +40,15 @@ ponder.on('Savings:RateChanged', async ({ event, context }) => {
 
 ponder.on('Savings:Saved', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsSaved, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } =
-		context.db;
+	const {
+		SavingsSaved,
+		SavingsSavedMapping,
+		SavingsWithdrawnMapping,
+		SavingsInterestMapping,
+		Ecosystem,
+		SavingsUserLeaderboard,
+		SavingsTotalHistory,
+	} = context.db;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -132,6 +139,25 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		},
 		update: () => ({
 			amountSaved,
+		}),
+	});
+
+	const totalSaved = await context.client.readContract({
+		abi: ERC20ABI,
+		address: ADDR.decentralizedEURO,
+		functionName: 'balanceOf',
+		args: [ADDR.savingsGateway],
+	});
+
+	const startTime = (event.block.timestamp / 86400n) * 86400n;
+	await SavingsTotalHistory.upsert({
+		id: startTime.toString(),
+		create: {
+			time: startTime,
+			total: totalSaved,
+		},
+		update: () => ({
+			total: totalSaved,
 		}),
 	});
 });
@@ -227,8 +253,15 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 
 ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 	const { client } = context;
-	const { SavingsWithdrawn, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } =
-		context.db;
+	const {
+		SavingsWithdrawn,
+		SavingsSavedMapping,
+		SavingsWithdrawnMapping,
+		SavingsInterestMapping,
+		Ecosystem,
+		SavingsUserLeaderboard,
+		SavingsTotalHistory,
+	} = context.db;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -309,6 +342,25 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		},
 		update: () => ({
 			amountSaved,
+		}),
+	});
+
+	const totalSaved = await context.client.readContract({
+		abi: ERC20ABI,
+		address: ADDR.decentralizedEURO,
+		functionName: 'balanceOf',
+		args: [ADDR.savingsGateway],
+	});
+
+	const startTime = (event.block.timestamp / 86400n) * 86400n;
+	await SavingsTotalHistory.upsert({
+		id: startTime.toString(),
+		create: {
+			time: startTime,
+			total: totalSaved,
+		},
+		update: () => ({
+			total: totalSaved,
 		}),
 	});
 });

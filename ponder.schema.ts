@@ -170,6 +170,12 @@ export default createSchema((p) => ({
 		interestReceived: p.bigint(),
 	}),
 
+	SavingsTotalHistory: p.createTable({
+		id: p.string(),
+		time: p.bigint(),
+		total: p.bigint(),
+	}),
+
 	RollerRolled: p.createTable({
 		id: p.string(),
 		created: p.bigint(),
