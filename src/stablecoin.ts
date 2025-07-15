@@ -177,7 +177,21 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		BridgeEUROP,
 		BridgeEURI,
 		BridgeEURE,
+		StablecoinTransferHistory,
 	} = context.db;
+
+	await StablecoinTransferHistory.create({
+		id: `${event.transaction.from}-${event.transaction.to}-${getRandomHex()}`,
+		data: {
+			from: event.args.from,
+			to: event.args.to,
+			amount: event.args.value,
+			timestamp: event.block.timestamp,
+			blockheight: event.block.number,
+			txHash: event.transaction.hash,
+			transactionTo: event.transaction.to ?? undefined,
+		},
+	});
 
 	await Ecosystem.upsert({
 		id: 'Stablecoin:TransferCounter',

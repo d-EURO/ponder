@@ -458,4 +458,15 @@ export default createSchema((p) => ({
 		value: p.string(),
 		amount: p.bigint(),
 	}),
+
+	StablecoinTransferHistory: p.createTable({
+		id: p.string(),
+		from: p.string(),
+		to: p.string(),
+		amount: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+		blockheight: p.bigint(),
+		transactionTo: p.string().optional(),
+	}),
 }));
