@@ -254,6 +254,18 @@ export default createSchema((p) => ({
 		feePaid: p.bigint(),
 	}),
 
+	// New table for mints detected from Transfer events (e.g., CoW Protocol)
+	MintFromTransfer: p.createTable({
+		id: p.string(),
+		txHash: p.string(),
+		created: p.bigint(),
+		minter: p.string(), // Who received the minted tokens
+		amount: p.bigint(), // Amount minted
+		source: p.string(), // Transaction initiator (e.g., CoW Protocol)
+		blockheight: p.bigint(),
+		logIndex: p.int(),
+	}),
+
 	ChallengeV2: p.createTable({
 		id: p.string(), // e.g. 0x5d0e66DC411FEfBE9cAe9CE56dA9BCE8C027f492-challenge-2
 		position: p.string(), // position being challenged

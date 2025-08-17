@@ -178,6 +178,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		BridgeEURI,
 		BridgeEURE,
 		StablecoinTransferHistory,
+		MintFromTransfer,
 	} = context.db;
 
 	await StablecoinTransferHistory.create({
@@ -214,6 +215,20 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
 				txHash: event.transaction.hash,
+			},
+		});
+
+		// Create MintFromTransfer entry for tracking all mints including CoW Protocol
+		await MintFromTransfer.create({
+			id: `mint-transfer-${event.transaction.hash}-${event.log.logIndex}`,
+			data: {
+				txHash: event.transaction.hash,
+				created: event.block.timestamp,
+				minter: event.args.to,
+				amount: event.args.value,
+				source: event.transaction.from, // Who initiated the transaction
+				blockheight: event.block.number,
+				logIndex: Number(event.log.logIndex),
 			},
 		});
 
