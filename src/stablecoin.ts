@@ -238,8 +238,8 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				timestamp: event.block.timestamp,
 				txHash: event.transaction.hash,
 				// Extended fields for better tracking
-				source: event.transaction.to || undefined,
-				initiator: event.transaction.from,
+				source: event.transaction.to ?? undefined,
+				initiator: event.transaction.from ?? undefined,
 				logIndex: event.log.logIndex !== undefined ? Number(event.log.logIndex) : undefined,
 				mintType: mintType,
 			},
