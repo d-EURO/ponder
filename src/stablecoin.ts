@@ -1,6 +1,6 @@
 import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
-import { ADDR, config } from '../ponder.config';
+import { ADDR } from '../ponder.config';
 import { getRandomHex } from './utils/randomString';
 
 ponder.on('Stablecoin:Profit', async ({ event, context }) => {
@@ -214,10 +214,6 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		if (txTo && ADDR.mintingHubGateway && txTo === ADDR.mintingHubGateway.toLowerCase()) {
 			mintType = 'direct';
 		}
-		// Check if it's a CoW Protocol mint
-		else if (txTo && config.cowProtocolAddress && txTo === config.cowProtocolAddress.toLowerCase()) {
-			mintType = 'cow';
-		}
 		// Check if it's a bridge mint
 		else if (txTo && (
 			(ADDR.bridgeEURC && txTo === ADDR.bridgeEURC.toLowerCase()) ||
@@ -230,6 +226,8 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		)) {
 			mintType = 'bridge';
 		}
+		// Everything else including CoW Protocol, DEX aggregators, etc.
+		// We don't need to specifically identify CoW - just track ALL mints
 
 		await Mint.create({
 			id: `${event.args.to}-mint-${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,

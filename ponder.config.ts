@@ -25,7 +25,6 @@ export const CONFIG = {
 		blockrange: undefined,
 		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
-		cowProtocolAddress: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
 	},
 	[polygon.id]: {
 		rpc: process.env.RPC_URL_POLYGON ?? polygon.rpcUrls.default.http[0],
@@ -34,7 +33,6 @@ export const CONFIG = {
 		blockrange: undefined,
 		maxRequestsPerSecond: 5,
 		pollingInterval: 5_000,
-		cowProtocolAddress: '0x9008d19f58aabd9ed0d60971565aa8510560ab41', // Same on Polygon
 	},
 };
 
