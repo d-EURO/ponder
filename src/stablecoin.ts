@@ -214,17 +214,21 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		if (txTo && ADDR.mintingHubGateway && txTo === ADDR.mintingHubGateway.toLowerCase()) {
 			mintType = 'direct';
 		}
-		// Check if it's a bridge mint
-		else if (txTo && (
-			(ADDR.bridgeEURC && txTo === ADDR.bridgeEURC.toLowerCase()) ||
-			(ADDR.bridgeEURS && txTo === ADDR.bridgeEURS.toLowerCase()) ||
-			(ADDR.bridgeVEUR && txTo === ADDR.bridgeVEUR.toLowerCase()) ||
-			(ADDR.bridgeEURR && txTo === ADDR.bridgeEURR.toLowerCase()) ||
-			(ADDR.bridgeEUROP && txTo === ADDR.bridgeEUROP.toLowerCase()) ||
-			(ADDR.bridgeEURI && txTo === ADDR.bridgeEURI.toLowerCase()) ||
-			(ADDR.bridgeEURE && txTo === ADDR.bridgeEURE.toLowerCase())
-		)) {
-			mintType = 'bridge';
+		// Check if it's a bridge mint (optimized with Set for O(1) lookup)
+		else if (txTo) {
+			const bridgeAddresses = new Set([
+				ADDR.bridgeEURC?.toLowerCase(),
+				ADDR.bridgeEURS?.toLowerCase(),
+				ADDR.bridgeVEUR?.toLowerCase(),
+				ADDR.bridgeEURR?.toLowerCase(),
+				ADDR.bridgeEUROP?.toLowerCase(),
+				ADDR.bridgeEURI?.toLowerCase(),
+				ADDR.bridgeEURE?.toLowerCase(),
+			].filter(Boolean)); // Remove undefined values
+			
+			if (bridgeAddresses.has(txTo)) {
+				mintType = 'bridge';
+			}
 		}
 		// Everything else including CoW Protocol, DEX aggregators, etc.
 		// We don't need to specifically identify CoW - just track ALL mints
