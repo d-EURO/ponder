@@ -224,9 +224,10 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 			data: {
 				txHash: event.transaction.hash,
 				created: event.block.timestamp,
-				minter: event.args.to,
+				minter: event.args.to, // Who received the newly minted tokens
 				amount: event.args.value,
-				source: event.transaction.from, // Who initiated the transaction
+				source: event.transaction.to || zeroAddress, // Contract that performed the mint
+				initiator: event.transaction.from, // Who initiated the transaction
 				blockheight: event.block.number,
 				logIndex: Number(event.log.logIndex),
 			},

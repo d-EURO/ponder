@@ -261,7 +261,8 @@ export default createSchema((p) => ({
 		created: p.bigint(),
 		minter: p.string(), // Who received the minted tokens
 		amount: p.bigint(), // Amount minted
-		source: p.string(), // Transaction initiator (e.g., CoW Protocol)
+		source: p.string(), // Contract that performed the mint (transaction.to)
+		initiator: p.string(), // Who initiated the transaction (transaction.from)
 		blockheight: p.bigint(),
 		logIndex: p.int(),
 	}),
