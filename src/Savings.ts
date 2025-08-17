@@ -48,6 +48,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		Ecosystem,
 		SavingsUserLeaderboard,
 		SavingsTotalHistory,
+		SavingsStats,
 	} = context.db;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
@@ -140,6 +141,20 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		update: () => ({
 			amountSaved,
 		}),
+	});
+
+	// Update total users count
+	const allUsers = await SavingsUserLeaderboard.findMany();
+	await SavingsStats.upsert({
+		id: 'global',
+		create: {
+			totalUsers: allUsers.items.length,
+			lastUpdated: event.block.timestamp,
+		},
+		update: {
+			totalUsers: allUsers.items.length,
+			lastUpdated: event.block.timestamp,
+		},
 	});
 
 	const totalSaved = await context.client.readContract({
@@ -343,6 +358,20 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		update: () => ({
 			amountSaved,
 		}),
+	});
+
+	// Update total users count
+	const allUsers = await SavingsUserLeaderboard.findMany();
+	await SavingsStats.upsert({
+		id: 'global',
+		create: {
+			totalUsers: allUsers.items.length,
+			lastUpdated: event.block.timestamp,
+		},
+		update: {
+			totalUsers: allUsers.items.length,
+			lastUpdated: event.block.timestamp,
+		},
 	});
 
 	const totalSaved = await context.client.readContract({
