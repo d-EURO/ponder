@@ -178,7 +178,6 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		BridgeEURI,
 		BridgeEURE,
 		StablecoinTransferHistory,
-		MintFromTransfer,
 	} = context.db;
 
 	await StablecoinTransferHistory.create({
@@ -207,6 +206,31 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
+		// Determine mint type based on the transaction destination
+		let mintType = 'other';
+		const txTo = event.transaction.to?.toLowerCase();
+		
+		// Check if it's a direct mint from MintingHub
+		if (txTo === ADDR.mintingHubGateway?.toLowerCase()) {
+			mintType = 'direct';
+		}
+		// Check if it's a CoW Protocol mint
+		else if (txTo === '0x9008d19f58aabd9ed0d60971565aa8510560ab41') {
+			mintType = 'cow';
+		}
+		// Check if it's a bridge mint
+		else if (
+			txTo === ADDR.bridgeEURC?.toLowerCase() ||
+			txTo === ADDR.bridgeEURS?.toLowerCase() ||
+			txTo === ADDR.bridgeVEUR?.toLowerCase() ||
+			txTo === ADDR.bridgeEURR?.toLowerCase() ||
+			txTo === ADDR.bridgeEUROP?.toLowerCase() ||
+			txTo === ADDR.bridgeEURI?.toLowerCase() ||
+			txTo === ADDR.bridgeEURE?.toLowerCase()
+		) {
+			mintType = 'bridge';
+		}
+
 		await Mint.create({
 			id: `${event.args.to}-mint-${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
 			data: {
@@ -215,21 +239,11 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
 				txHash: event.transaction.hash,
-			},
-		});
-
-		// Create MintFromTransfer entry for tracking all mints including CoW Protocol
-		await MintFromTransfer.create({
-			id: `mint-transfer-${event.transaction.hash}-${event.log.logIndex}`,
-			data: {
-				txHash: event.transaction.hash,
-				created: event.block.timestamp,
-				minter: event.args.to, // Who received the newly minted tokens
-				amount: event.args.value,
-				source: event.transaction.to || zeroAddress, // Contract that performed the mint
-				initiator: event.transaction.from, // Who initiated the transaction
-				blockheight: event.block.number,
+				// Extended fields for better tracking
+				source: event.transaction.to || undefined,
+				initiator: event.transaction.from,
 				logIndex: Number(event.log.logIndex),
+				mintType: mintType,
 			},
 		});
 

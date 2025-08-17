@@ -11,6 +11,11 @@ export default createSchema((p) => ({
 		blockheight: p.bigint(),
 		timestamp: p.bigint(),
 		txHash: p.string(),
+		// Extended fields for better tracking (including CoW Protocol)
+		source: p.string().optional(), // Contract that performed the mint
+		initiator: p.string().optional(), // Who initiated the transaction
+		logIndex: p.int().optional(), // Log index for unique identification
+		mintType: p.string().optional(), // "direct" | "cow" | "bridge" | "other"
 	}),
 
 	Burn: p.createTable({
@@ -252,19 +257,6 @@ export default createSchema((p) => ({
 		feeTimeframe: p.int(),
 		feePPM: p.int(),
 		feePaid: p.bigint(),
-	}),
-
-	// New table for mints detected from Transfer events (e.g., CoW Protocol)
-	MintFromTransfer: p.createTable({
-		id: p.string(),
-		txHash: p.string(),
-		created: p.bigint(),
-		minter: p.string(), // Who received the minted tokens
-		amount: p.bigint(), // Amount minted
-		source: p.string(), // Contract that performed the mint (transaction.to)
-		initiator: p.string(), // Who initiated the transaction (transaction.from)
-		blockheight: p.bigint(),
-		logIndex: p.int(),
 	}),
 
 	ChallengeV2: p.createTable({
