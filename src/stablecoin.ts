@@ -1,6 +1,6 @@
 import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
-import { ADDR } from '../ponder.config';
+import { ADDR, config } from '../ponder.config';
 import { getRandomHex } from './utils/randomString';
 
 ponder.on('Stablecoin:Profit', async ({ event, context }) => {
@@ -211,23 +211,23 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		const txTo = event.transaction.to?.toLowerCase();
 		
 		// Check if it's a direct mint from MintingHub
-		if (txTo === ADDR.mintingHubGateway?.toLowerCase()) {
+		if (txTo && ADDR.mintingHubGateway && txTo === ADDR.mintingHubGateway.toLowerCase()) {
 			mintType = 'direct';
 		}
 		// Check if it's a CoW Protocol mint
-		else if (txTo === '0x9008d19f58aabd9ed0d60971565aa8510560ab41') {
+		else if (txTo && config.cowProtocolAddress && txTo === config.cowProtocolAddress.toLowerCase()) {
 			mintType = 'cow';
 		}
 		// Check if it's a bridge mint
-		else if (
-			txTo === ADDR.bridgeEURC?.toLowerCase() ||
-			txTo === ADDR.bridgeEURS?.toLowerCase() ||
-			txTo === ADDR.bridgeVEUR?.toLowerCase() ||
-			txTo === ADDR.bridgeEURR?.toLowerCase() ||
-			txTo === ADDR.bridgeEUROP?.toLowerCase() ||
-			txTo === ADDR.bridgeEURI?.toLowerCase() ||
-			txTo === ADDR.bridgeEURE?.toLowerCase()
-		) {
+		else if (txTo && (
+			(ADDR.bridgeEURC && txTo === ADDR.bridgeEURC.toLowerCase()) ||
+			(ADDR.bridgeEURS && txTo === ADDR.bridgeEURS.toLowerCase()) ||
+			(ADDR.bridgeVEUR && txTo === ADDR.bridgeVEUR.toLowerCase()) ||
+			(ADDR.bridgeEURR && txTo === ADDR.bridgeEURR.toLowerCase()) ||
+			(ADDR.bridgeEUROP && txTo === ADDR.bridgeEUROP.toLowerCase()) ||
+			(ADDR.bridgeEURI && txTo === ADDR.bridgeEURI.toLowerCase()) ||
+			(ADDR.bridgeEURE && txTo === ADDR.bridgeEURE.toLowerCase())
+		)) {
 			mintType = 'bridge';
 		}
 
@@ -242,7 +242,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				// Extended fields for better tracking
 				source: event.transaction.to || undefined,
 				initiator: event.transaction.from,
-				logIndex: Number(event.log.logIndex),
+				logIndex: event.log.logIndex !== undefined ? Number(event.log.logIndex) : undefined,
 				mintType: mintType,
 			},
 		});
