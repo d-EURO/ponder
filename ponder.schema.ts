@@ -360,6 +360,21 @@ export default createSchema((p) => ({
 		investVolume: p.bigint(),
 		savingsVolume: p.bigint(),
 		totalVolume: p.bigint(),
+		// NEU: Felder für potenzielle Volumen
+		potentialVolume: p.bigint().optional(),           // Total volume + accrued interest
+		totalAccruedInterest: p.bigint().optional(),      // Sum of all unclaimed interest
+		lastInterestUpdate: p.bigint().optional(),        // Timestamp of last calculation
+		referredUsersWithSavings: p.string().list().optional(), // Users with active savings
+	}),
+
+	// NEU: Tabelle für User Savings Tracking
+	UserSavingsTracking: p.createTable({
+		id: p.string(),                        // user address
+		frontendCode: p.string().optional(),
+		currentBalance: p.bigint(),
+		lastUpdateTicks: p.bigint(),
+		accruedInterest: p.bigint(),
+		lastCalculated: p.bigint(),
 	}),
 
 	FrontendRewardsVolumeMapping: p.createTable({
