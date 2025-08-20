@@ -11,11 +11,6 @@ export default createSchema((p) => ({
 		blockheight: p.bigint(),
 		timestamp: p.bigint(),
 		txHash: p.string(),
-		// Extended fields for better tracking of all mint sources
-		source: p.string().optional(), // Contract that performed the mint
-		initiator: p.string().optional(), // Who initiated the transaction
-		logIndex: p.int().optional(), // Log index for unique identification
-		mintType: p.string().optional(), // "direct" | "bridge" | "other"
 	}),
 
 	Burn: p.createTable({
