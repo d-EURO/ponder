@@ -206,6 +206,33 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
+		// Determine mint type based on the transaction destination
+		let mintType = 'other';
+		const txTo = event.transaction.to?.toLowerCase();
+		
+		// Check if it's a direct mint from MintingHub
+		if (txTo && ADDR.mintingHubGateway && txTo === ADDR.mintingHubGateway.toLowerCase()) {
+			mintType = 'direct';
+		}
+		// Check if it's a bridge mint (optimized with Set for O(1) lookup)
+		else if (txTo) {
+			const bridgeAddresses = new Set([
+				ADDR.bridgeEURC?.toLowerCase(),
+				ADDR.bridgeEURS?.toLowerCase(),
+				ADDR.bridgeVEUR?.toLowerCase(),
+				ADDR.bridgeEURR?.toLowerCase(),
+				ADDR.bridgeEUROP?.toLowerCase(),
+				ADDR.bridgeEURI?.toLowerCase(),
+				ADDR.bridgeEURE?.toLowerCase(),
+			].filter(Boolean)); // Remove undefined values
+			
+			if (bridgeAddresses.has(txTo)) {
+				mintType = 'bridge';
+			}
+		}
+		// Everything else including CoW Protocol, DEX aggregators, etc.
+		// We don't need to specifically identify CoW - just track ALL mints
+
 		await Mint.create({
 			id: `${event.args.to}-mint-${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
 			data: {
@@ -214,6 +241,11 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				blockheight: event.block.number,
 				timestamp: event.block.timestamp,
 				txHash: event.transaction.hash,
+				// Extended fields for better tracking
+				source: event.transaction.to ?? undefined,
+				initiator: event.transaction.from ?? undefined,
+				logIndex: event.log.logIndex !== undefined ? Number(event.log.logIndex) : undefined,
+				mintType: mintType,
 			},
 		});
 
