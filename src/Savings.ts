@@ -2,7 +2,6 @@ import { ponder } from '@/generated';
 import { ERC20ABI, SavingsABI, SavingsGatewayABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
 import { Address, decodeFunctionData } from 'viem';
-import { getRandomHex } from './utils/randomString';
 
 ponder.on('Savings:RateProposed', async ({ event, context }) => {
 	const { SavingsRateProposed } = context.db;
@@ -10,7 +9,7 @@ ponder.on('Savings:RateProposed', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsRateProposed.create({
-		id: `${who.toLowerCase()}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -28,7 +27,7 @@ ponder.on('Savings:RateChanged', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsRateChanged.create({
-		id: `${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -98,7 +97,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsSaved.create({
-		id: `${account}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -206,7 +205,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsInterest.create({
-		id: `${account}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,
@@ -302,7 +301,7 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 
 	// flat indexing
 	await SavingsWithdrawn.create({
-		id: `${account}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			blockheight: event.block.number,

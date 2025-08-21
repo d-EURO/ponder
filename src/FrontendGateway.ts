@@ -1,6 +1,5 @@
 import { ponder } from '@/generated';
 import { PositionV2ABI } from '@deuro/eurocoin';
-import { getRandomHex } from './utils/randomString';
 
 ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) => {
 	const { FrontendCodeRegistered, FrontendCodeMapping } = context.db;
@@ -8,7 +7,7 @@ ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) =
 
 	// flat indexing
 	await FrontendCodeRegistered.create({
-		id: `${owner}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			owner,
 			frontendCode,
@@ -34,7 +33,7 @@ ponder.on('FrontendGateway:FrontendCodeTransferred', async ({ event, context }) 
 
 	// flat indexing
 	await FrontendCodeRegistered.create({
-		id: `${to}-${event.block.number.toString()}-${event.log.logIndex}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			created: event.block.timestamp,
 			owner: to,
@@ -69,7 +68,7 @@ ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
 	const { user, amount, reward, frontendCode } = event.args;
 
 	await InvestRewardAdded.create({
-		id: `${user}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			user,
 			frontendCode,
@@ -116,7 +115,7 @@ ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
 	});
 
 	await FrontendBonusHistoryMapping.create({
-		id: `${frontendCode}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			frontendCode,
 			payout: reward,
@@ -132,7 +131,7 @@ ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
 	const { user, amount, reward, frontendCode } = event.args;
 
 	await RedeemRewardAdded.create({
-		id: `${user}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			user,
 			amount,
@@ -179,7 +178,7 @@ ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
 	});
 
 	await FrontendBonusHistoryMapping.create({
-		id: `${frontendCode}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			frontendCode,
 			payout: reward,
@@ -195,7 +194,7 @@ ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context })
 	const { user, amount, reward, frontendCode } = event.args;
 
 	await UnwrapAndSellRewardAdded.create({
-		id: `${user}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			user,
 			amount,
@@ -242,7 +241,7 @@ ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context })
 	});
 
 	await FrontendBonusHistoryMapping.create({
-		id: `${frontendCode}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			frontendCode,
 			payout: reward,
@@ -258,7 +257,7 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 	const { saver, interest, reward, frontendCode } = event.args;
 
 	await SavingsRewardAdded.create({
-		id: `${saver}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			user: saver,
 			interest,
@@ -305,7 +304,7 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 	});
 
 	await FrontendBonusHistoryMapping.create({
-		id: `${frontendCode}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			frontendCode,
 			payout: reward,
@@ -333,7 +332,7 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 	}
 
 	await PositionRewardAdded.create({
-		id: `${position}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			user: owner,
 			position,
@@ -381,7 +380,7 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 	});
 
 	await FrontendBonusHistoryMapping.create({
-		id: `${frontendCode}-${event.transaction.hash}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			frontendCode,
 			payout: reward,

@@ -1,7 +1,6 @@
 import { ponder } from '@/generated';
 import { Address, zeroAddress } from 'viem';
 import { ADDR } from '../ponder.config';
-import { getRandomHex } from './utils/randomString';
 
 ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	const { DEPS, ActiveUser, Ecosystem } = context.db;
@@ -181,7 +180,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	} = context.db;
 
 	await StablecoinTransferHistory.create({
-		id: `${event.transaction.from}-${event.transaction.to}-${getRandomHex()}`,
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		data: {
 			from: event.args.from,
 			to: event.args.to,
@@ -207,7 +206,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
 		await Mint.create({
-			id: `${event.args.to}-mint-${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+			id: `${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				to: event.args.to,
 				value: event.args.value,
@@ -264,7 +263,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	// emit Transfer(account, address(0), amount);
 	if (event.args.to === zeroAddress) {
 		await Burn.create({
-			id: `${event.args.from}-burn-${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+			id: `${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				from: event.args.from,
 				value: event.args.value,
@@ -330,43 +329,43 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	switch (event.transaction.to?.toLowerCase()) {
 		case ADDR.bridgeEURC.toLowerCase():
 			await BridgeEURC.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
 			break;
 		case ADDR.bridgeEURS.toLowerCase():
 			await BridgeEURS.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
 			break;
 		case ADDR.bridgeVEUR.toLowerCase():
 			await BridgeVEUR.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
 			break;
 		case ADDR.bridgeEURR.toLowerCase():
 			await BridgeEURR.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
 			break;
 		case ADDR.bridgeEUROP.toLowerCase():
 			await BridgeEUROP.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
 			break;
 		case ADDR.bridgeEURI.toLowerCase():
 			await BridgeEURI.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
 			break;
 		case ADDR.bridgeEURE.toLowerCase():
 			await BridgeEURE.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
 			break;
