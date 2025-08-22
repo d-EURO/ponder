@@ -203,8 +203,16 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		}),
 	});
 
+	// Check if this is a bridge transaction by looking for 'bridge' prefix in ADDR
+	const isBridgeTransaction = event.transaction.to && 
+		Object.entries(ADDR).some(([key, value]) => 
+			key.toLowerCase().startsWith('bridge') && 
+			value?.toLowerCase() === event.transaction.to?.toLowerCase()
+		);
+
 	// emit Transfer(address(0), recipient, amount);
-	if (event.args.from === zeroAddress) {
+	// Only count as mint if it's NOT a bridge transaction
+	if (event.args.from === zeroAddress && !isBridgeTransaction) {
 		await Mint.create({
 			id: `${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
