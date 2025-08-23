@@ -285,6 +285,16 @@ export default createSchema((p) => ({
 		challengeSize: p.bigint(),
 	}),
 
+	PositionMint: p.createTable({
+		id: p.string(),
+		positionAddress: p.string().optional(),
+		to: p.string(),
+		value: p.bigint(),
+		blockheight: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
 	// -------------------------------------------------------------------------
 	// FRONTEND GATEWAY
 	// -------------------------------------------------------------------------
