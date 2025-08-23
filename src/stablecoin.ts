@@ -1,7 +1,7 @@
 import { ponder } from '@/generated';
-import { Address, zeroAddress, decodeFunctionData, RpcTransaction, BlockTag, decodeEventLog } from 'viem';
+import { Address, zeroAddress, decodeEventLog } from 'viem';
 import { ADDR } from '../ponder.config';
-import { MintingHubGatewayABI, MintingHubV2ABI, PositionV2ABI } from '@deuro/eurocoin';
+import { MintingHubGatewayABI } from '@deuro/eurocoin';
 
 ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	const { DEPS, ActiveUser, Ecosystem } = context.db;
@@ -375,7 +375,26 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		});
 	}
 
-	// Capture bridge transactions
+	const stablecoinToBridge = {
+		[ADDR.eurc.toLowerCase()]: ADDR.bridgeEURC.toLowerCase(),
+		[ADDR.eurs.toLowerCase()]: ADDR.bridgeEURS.toLowerCase(),
+		[ADDR.veur.toLowerCase()]: ADDR.bridgeVEUR.toLowerCase(),
+		[ADDR.eurr.toLowerCase()]: ADDR.bridgeEURR.toLowerCase(),
+		[ADDR.europ.toLowerCase()]: ADDR.bridgeEUROP.toLowerCase(),
+		[ADDR.euri.toLowerCase()]: ADDR.bridgeEURI.toLowerCase(),
+		[ADDR.eure.toLowerCase()]: ADDR.bridgeEURE.toLowerCase(),
+	};
+
+	const bridgeAddressToTable = {
+		[ADDR.bridgeEURC.toLowerCase()]: BridgeEURC,
+		[ADDR.bridgeEURS.toLowerCase()]: BridgeEURS,
+		[ADDR.bridgeVEUR.toLowerCase()]: BridgeVEUR,
+		[ADDR.bridgeEURR.toLowerCase()]: BridgeEURR,
+		[ADDR.bridgeEUROP.toLowerCase()]: BridgeEUROP,
+		[ADDR.bridgeEURI.toLowerCase()]: BridgeEURI,
+		[ADDR.bridgeEURE.toLowerCase()]: BridgeEURE,
+	};
+
 	const bridgeData = {
 		swapper: event.transaction.from,
 		txHash: event.transaction.hash,
@@ -384,51 +403,40 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		timestamp: event.block.timestamp,
 	};
 
-	switch (event.transaction.to?.toLowerCase()) {
-		case ADDR.bridgeEURC.toLowerCase():
-			await BridgeEURC.create({
+	// Capture direct bridge transactions
+	const bridgeTable = bridgeAddressToTable[event.transaction.to?.toLowerCase() as keyof typeof bridgeAddressToTable];
+	if (bridgeTable) {
+		await bridgeTable.create({
+			id: `${event.transaction.hash}-${event.log.logIndex}`,
+			data: bridgeData,
+		});
+	}
+
+	const ecosystemContract = Object.values(ADDR).map((address) => address.toLowerCase());
+	const externalInteraction = event.transaction.to && !ecosystemContract.includes(event.transaction.to.toLowerCase());
+	const isMintingOrBurning = event.args.from === zeroAddress || event.args.to === zeroAddress;
+	const isKnownPosition = event.transaction.to ? await PositionV2.findUnique({ id: event.transaction.to.toLowerCase() }) : false;
+
+	// Capture swaps initiated from external protocols
+	if (externalInteraction && isMintingOrBurning && !isKnownPosition) {
+		const receipt = await context.client.request({
+			method: 'eth_getTransactionReceipt',
+			params: [event.transaction.hash],
+		});
+
+		const logIndex = event.log.id.split('-')[1];
+		const deuroLogIndex = receipt?.logs.findIndex((log) => log.logIndex == logIndex);
+		const previousLog = deuroLogIndex ? receipt?.logs[deuroLogIndex - 1] : undefined;
+		const nextLog = deuroLogIndex ? receipt?.logs[deuroLogIndex + 1] : undefined;
+		const potencialBrigeLog = bridgeData.isMint ? previousLog : nextLog;
+		const bridgeAddress =
+			potencialBrigeLog && stablecoinToBridge[potencialBrigeLog.address.toLowerCase() as keyof typeof stablecoinToBridge];
+
+		if (bridgeAddress) {
+			await bridgeAddressToTable[bridgeAddress]?.create({
 				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
-			break;
-		case ADDR.bridgeEURS.toLowerCase():
-			await BridgeEURS.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeVEUR.toLowerCase():
-			await BridgeVEUR.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEURR.toLowerCase():
-			await BridgeEURR.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEUROP.toLowerCase():
-			await BridgeEUROP.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEURI.toLowerCase():
-			await BridgeEURI.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEURE.toLowerCase():
-			await BridgeEURE.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}`,
-				data: bridgeData,
-			});
-			break;
-		default:
-			// no action
-			break;
+		}
 	}
 });
