@@ -285,6 +285,16 @@ export default createSchema((p) => ({
 		challengeSize: p.bigint(),
 	}),
 
+	PositionMint: p.createTable({
+		id: p.string(),
+		positionAddress: p.string().optional(),
+		to: p.string(),
+		value: p.bigint(),
+		blockheight: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+	}),
+
 	// -------------------------------------------------------------------------
 	// FRONTEND GATEWAY
 	// -------------------------------------------------------------------------
@@ -457,5 +467,16 @@ export default createSchema((p) => ({
 		id: p.string(),
 		value: p.string(),
 		amount: p.bigint(),
+	}),
+
+	StablecoinTransferHistory: p.createTable({
+		id: p.string(),
+		from: p.string(),
+		to: p.string(),
+		amount: p.bigint(),
+		timestamp: p.bigint(),
+		txHash: p.string(),
+		blockheight: p.bigint(),
+		transactionTo: p.string().optional(),
 	}),
 }));

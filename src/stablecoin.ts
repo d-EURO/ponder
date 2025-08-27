@@ -1,7 +1,7 @@
 import { ponder } from '@/generated';
-import { Address, zeroAddress } from 'viem';
+import { Address, zeroAddress, decodeEventLog } from 'viem';
 import { ADDR } from '../ponder.config';
-import { getRandomHex } from './utils/randomString';
+import { MintingHubGatewayABI } from '@deuro/eurocoin';
 
 ponder.on('Stablecoin:Profit', async ({ event, context }) => {
 	const { DEPS, ActiveUser, Ecosystem } = context.db;
@@ -177,7 +177,23 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		BridgeEUROP,
 		BridgeEURI,
 		BridgeEURE,
+		StablecoinTransferHistory,
+		PositionV2,
+		PositionMint,
 	} = context.db;
+
+	await StablecoinTransferHistory.create({
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		data: {
+			from: event.args.from,
+			to: event.args.to,
+			amount: event.args.value,
+			timestamp: event.block.timestamp,
+			blockheight: event.block.number,
+			txHash: event.transaction.hash,
+			transactionTo: event.transaction.to ?? undefined,
+		},
+	});
 
 	await Ecosystem.upsert({
 		id: 'Stablecoin:TransferCounter',
@@ -193,7 +209,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 	// emit Transfer(address(0), recipient, amount);
 	if (event.args.from === zeroAddress) {
 		await Mint.create({
-			id: `${event.args.to}-mint-${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+			id: `${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				to: event.args.to,
 				value: event.args.value,
@@ -245,12 +261,67 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				lastActiveTime: event.block.timestamp,
 			}),
 		});
+
+		// Capture mints from position creation
+		if (event.transaction.to?.toLowerCase() === ADDR.mintingHubGateway.toLowerCase()) {
+			const receipt = await context.client.request({
+				method: 'eth_getTransactionReceipt',
+				params: [event.transaction.hash],
+			});
+
+			const positionOpenedEvent = receipt?.logs
+				.filter((log) => log.address.toLowerCase() === ADDR.mintingHubGateway.toLowerCase())
+				.map(({ data, topics }) =>
+					decodeEventLog({
+						abi: MintingHubGatewayABI,
+						data: data as `0x${string}`,
+						topics: topics as [`0x${string}`, ...`0x${string}`[]],
+					})
+				)
+				.find((event) => event.eventName === 'PositionOpened');
+
+			await PositionMint.upsert({
+				id: event.transaction.hash.toLowerCase(),
+				create: {
+					to: event.args.to,
+					positionAddress: positionOpenedEvent?.args.position.toLowerCase() as `0x${string}`,
+					value: event.args.value,
+					timestamp: event.block.timestamp,
+					blockheight: event.block.number,
+					txHash: event.transaction.hash,
+				},
+				update: ({ current }) => ({
+					to: event.args.to.toLowerCase() !== ADDR.equity.toLowerCase() ? event.args.to : current.to,
+					value: current.value + event.args.value,
+				}),
+			});
+		}
+
+		// Capture mints from existing positions
+		const openPosition = event.transaction.to ? await PositionV2.findUnique({ id: event.transaction.to.toLowerCase() }) : null;
+		if (openPosition) {
+			await PositionMint.upsert({
+				id: event.transaction.hash.toLowerCase(),
+				create: {
+					to: event.args.to,
+					positionAddress: openPosition.id,
+					value: event.args.value,
+					timestamp: event.block.timestamp,
+					blockheight: event.block.number,
+					txHash: event.transaction.hash,
+				},
+				update: ({ current }) => ({
+					to: event.args.to.toLowerCase() !== ADDR.equity.toLowerCase() ? event.args.to : current.to,
+					value: current.value + event.args.value,
+				}),
+			});
+		}
 	}
 
 	// emit Transfer(account, address(0), amount);
 	if (event.args.to === zeroAddress) {
 		await Burn.create({
-			id: `${event.args.from}-burn-${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+			id: `${event.transaction.hash}-${event.log.logIndex}`,
 			data: {
 				from: event.args.from,
 				value: event.args.value,
@@ -304,7 +375,26 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		});
 	}
 
-	// Capture bridge transactions
+	const stablecoinToBridge = {
+		[ADDR.eurc.toLowerCase()]: ADDR.bridgeEURC.toLowerCase(),
+		[ADDR.eurs.toLowerCase()]: ADDR.bridgeEURS.toLowerCase(),
+		[ADDR.veur.toLowerCase()]: ADDR.bridgeVEUR.toLowerCase(),
+		[ADDR.eurr.toLowerCase()]: ADDR.bridgeEURR.toLowerCase(),
+		[ADDR.europ.toLowerCase()]: ADDR.bridgeEUROP.toLowerCase(),
+		[ADDR.euri.toLowerCase()]: ADDR.bridgeEURI.toLowerCase(),
+		[ADDR.eure.toLowerCase()]: ADDR.bridgeEURE.toLowerCase(),
+	};
+
+	const bridgeAddressToTable = {
+		[ADDR.bridgeEURC.toLowerCase()]: BridgeEURC,
+		[ADDR.bridgeEURS.toLowerCase()]: BridgeEURS,
+		[ADDR.bridgeVEUR.toLowerCase()]: BridgeVEUR,
+		[ADDR.bridgeEURR.toLowerCase()]: BridgeEURR,
+		[ADDR.bridgeEUROP.toLowerCase()]: BridgeEUROP,
+		[ADDR.bridgeEURI.toLowerCase()]: BridgeEURI,
+		[ADDR.bridgeEURE.toLowerCase()]: BridgeEURE,
+	};
+
 	const bridgeData = {
 		swapper: event.transaction.from,
 		txHash: event.transaction.hash,
@@ -313,51 +403,40 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		timestamp: event.block.timestamp,
 	};
 
-	switch (event.transaction.to?.toLowerCase()) {
-		case ADDR.bridgeEURC.toLowerCase():
-			await BridgeEURC.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
+	// Capture direct bridge transactions
+	const bridgeTable = bridgeAddressToTable[event.transaction.to?.toLowerCase() as keyof typeof bridgeAddressToTable];
+	if (bridgeTable) {
+		await bridgeTable.create({
+			id: `${event.transaction.hash}-${event.log.logIndex}`,
+			data: bridgeData,
+		});
+	}
+
+	const ecosystemContract = Object.values(ADDR).map((address) => address.toLowerCase());
+	const externalInteraction = event.transaction.to && !ecosystemContract.includes(event.transaction.to.toLowerCase());
+	const isMintingOrBurning = event.args.from === zeroAddress || event.args.to === zeroAddress;
+	const isKnownPosition = event.transaction.to ? await PositionV2.findUnique({ id: event.transaction.to.toLowerCase() }) : false;
+
+	// Capture swaps initiated from external protocols
+	if (externalInteraction && isMintingOrBurning && !isKnownPosition) {
+		const receipt = await context.client.request({
+			method: 'eth_getTransactionReceipt',
+			params: [event.transaction.hash],
+		});
+
+		const logIndex = event.log.id.split('-')[1];
+		const deuroLogIndex = receipt?.logs.findIndex((log) => log.logIndex == logIndex);
+		const previousLog = deuroLogIndex ? receipt?.logs[deuroLogIndex - 1] : undefined;
+		const nextLog = deuroLogIndex ? receipt?.logs[deuroLogIndex + 1] : undefined;
+		const potencialBrigeLog = bridgeData.isMint ? previousLog : nextLog;
+		const bridgeAddress =
+			potencialBrigeLog && stablecoinToBridge[potencialBrigeLog.address.toLowerCase() as keyof typeof stablecoinToBridge];
+
+		if (bridgeAddress) {
+			await bridgeAddressToTable[bridgeAddress]?.create({
+				id: `${event.transaction.hash}-${event.log.logIndex}`,
 				data: bridgeData,
 			});
-			break;
-		case ADDR.bridgeEURS.toLowerCase():
-			await BridgeEURS.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeVEUR.toLowerCase():
-			await BridgeVEUR.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEURR.toLowerCase():
-			await BridgeEURR.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEUROP.toLowerCase():
-			await BridgeEUROP.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEURI.toLowerCase():
-			await BridgeEURI.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
-				data: bridgeData,
-			});
-			break;
-		case ADDR.bridgeEURE.toLowerCase():
-			await BridgeEURE.create({
-				id: `${event.transaction.hash}-${event.log.logIndex}-${getRandomHex()}`,
-				data: bridgeData,
-			});
-			break;
-		default:
-			// no action
-			break;
+		}
 	}
 });
