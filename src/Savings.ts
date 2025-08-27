@@ -148,17 +148,16 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 
 	// Update total users count only for new users
 	if (!existingUser) {
-		const currentStats = await SavingsStats.findUnique({ id: 'global' });
 		await SavingsStats.upsert({
 			id: 'global',
 			create: {
 				totalUsers: 1,
 				lastUpdated: event.block.timestamp,
 			},
-			update: {
-				totalUsers: (currentStats?.totalUsers || 0) + 1,
+			update: ({ current }) => ({
+				totalUsers: (current.totalUsers || 0) + 1,
 				lastUpdated: event.block.timestamp,
-			},
+			}),
 		});
 	}
 
@@ -354,8 +353,6 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		args: [account],
 	});
 
-	// Update leaderboard but DON'T count as new user
-	// Users are only counted when they first SAVE (deposit)
 	await SavingsUserLeaderboard.upsert({
 		id: account,
 		create: {
