@@ -170,6 +170,12 @@ export default createSchema((p) => ({
 		interestReceived: p.bigint(),
 	}),
 
+	SavingsStats: p.createTable({
+		id: p.string(), // Will be 'global' for single row
+		totalUsers: p.int(),
+		lastUpdated: p.bigint(),
+	}),
+
 	SavingsTotalHistory: p.createTable({
 		id: p.string(),
 		time: p.bigint(),
