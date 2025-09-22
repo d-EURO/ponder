@@ -8,4 +8,4 @@ USER node
 COPY --chown=node . .
 RUN yarn install --production --frozen-lockfile
 
-CMD ["yarn", "start"]
+CMD ["npx", "tsx", "src/api/server.ts"]

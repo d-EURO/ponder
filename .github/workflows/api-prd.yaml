@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_TAGS: dfxswiss/deuro-ponder:latest
+  DOCKER_TAGS: dfxswiss/deuro-ponder-api:latest
   AZURE_RESOURCE_GROUP: rg-dfx-api-prd
   AZURE_CONTAINER_APP: ca-dfx-dep-prd
   DEPLOY_INFO: ${{ github.ref_name }}-${{ github.sha }}
