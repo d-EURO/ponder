@@ -13,8 +13,11 @@ yarn-error.log*
 # Env files
 .env*.local
 .env
+.env.api
 
 # Ponder
 /generated/
 /.ponder*
 /.ponder.backup*
+.claude/settings.local.json
+.claude/settings.local.json
