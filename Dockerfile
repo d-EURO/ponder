@@ -6,6 +6,6 @@ WORKDIR /app
 USER node
 
 COPY --chown=node . .
-RUN yarn install --production --frozen-lockfile
+RUN npm install
 
-CMD ["npx", "tsx", "src/api/server.ts"]
+CMD ["npm", "run", "api:dev"]
