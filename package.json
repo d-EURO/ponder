@@ -10,9 +10,9 @@
 		"lint": "eslint .",
 		"eslint-config-ponder": "workspace:*",
 		"typecheck": "tsc",
-		"api:dev": "tsx watch src/api/server.ts",
+		"api:dev": "tsx watch src/api/index.ts",
 		"api:build": "tsc -p tsconfig.api.json",
-		"api:start": "node dist/api/server.js"
+		"api:start": "node dist/api/index.js"
 	},
 	"dependencies": {
 		"@deuro/eurocoin": "1.0.13",
