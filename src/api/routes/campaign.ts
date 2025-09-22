@@ -5,6 +5,11 @@ import {
   completeTask,
   checkSwapTransaction
 } from '../controllers/campaignController';
+import {
+  progressRateLimiter,
+  completeTaskRateLimiter,
+  checkSwapRateLimiter
+} from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -41,6 +46,7 @@ const handleValidation = (req: any, res: any, next: any) => {
 
 // POST /campaign/progress
 router.post('/progress',
+  progressRateLimiter,
   validateWallet,
   validateChainId,
   handleValidation,
@@ -49,6 +55,7 @@ router.post('/progress',
 
 // POST /campaign/complete-task
 router.post('/complete-task',
+  completeTaskRateLimiter,
   validateWallet,
   validateChainId,
   validateTaskId,
@@ -60,6 +67,7 @@ router.post('/complete-task',
 
 // POST /campaign/check-swap
 router.post('/check-swap',
+  checkSwapRateLimiter,
   validateWallet,
   validateChainId,
   validateTxHash,
