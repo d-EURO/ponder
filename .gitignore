@@ -18,3 +18,4 @@ yarn-error.log*
 /generated/
 /.ponder*
 /.ponder.backup*
+.claude/settings.local.json
