@@ -9,7 +9,6 @@ config({ path: '.env.api' });
 // Import middleware
 import { requestLogger, errorLogger } from './middleware/logger';
 import { errorHandler } from './middleware/errorHandler';
-import { defaultRateLimiter } from './middleware/rateLimiting';
 
 // Import routes
 import healthRoutes from './routes/health';
@@ -48,9 +47,6 @@ export function createApp(): Application {
 
   // Request logging (before routes)
   app.use(requestLogger);
-
-  // Default rate limiting
-  app.use(defaultRateLimiter);
 
   // Health check route (no auth needed)
   app.use('/health', healthRoutes);
