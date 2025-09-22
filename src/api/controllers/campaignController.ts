@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getProgressForWallet, saveTaskCompletion } from '../services/databaseService';
 import { validateSwapTransaction } from '../services/blockchainService';
+import { enhancedSwapValidator } from '../services/enhancedSwapValidator';
 
 // Task definitions
 const TASKS = [
@@ -134,14 +135,64 @@ export async function checkSwapTransaction(req: Request, res: Response) {
   try {
     const { txHash, walletAddress, chainId } = req.body;
 
-    // Validate transaction
-    const validation = await validateSwapTransaction(txHash, walletAddress, chainId);
+    console.log(`📨 Checking swap transaction: ${txHash}`);
+    console.log(`   Wallet: ${walletAddress}`);
+    console.log(`   Chain: ${chainId}`);
 
+    // Use enhanced validator with confirmation waiting
+    const validation = await enhancedSwapValidator.validateSwapWithConfirmation(
+      txHash,
+      walletAddress,
+      chainId,
+      {
+        requiredConfirmations: 1, // Wait for at least 1 confirmation
+        maxRetries: 20, // Try up to 20 times
+        retryDelay: 3000, // 3 seconds between retries
+        timeout: 60000, // 60 seconds total timeout
+      }
+    );
+
+    // Return status information immediately if still pending
+    if (validation.status === 'pending') {
+      return res.json({
+        taskId: null,
+        status: 'pending',
+        isValid: false,
+        reason: 'Transaction is still pending confirmation',
+        message: 'Please check again in a few seconds',
+      });
+    }
+
+    // Return not found status if transaction doesn't exist
+    if (validation.status === 'not_found') {
+      return res.json({
+        taskId: null,
+        status: 'not_found',
+        isValid: false,
+        reason: 'Transaction not found on chain',
+        message: 'Transaction may not be submitted yet or invalid hash',
+      });
+    }
+
+    // Return failed status if transaction failed
+    if (validation.status === 'failed') {
+      return res.json({
+        taskId: null,
+        status: 'failed',
+        isValid: false,
+        reason: validation.reason || 'Transaction failed',
+        message: 'The transaction was reverted or failed',
+      });
+    }
+
+    // Transaction is confirmed - check validation
     if (!validation.isValid) {
       return res.json({
         taskId: null,
+        status: 'confirmed',
         isValid: false,
-        reason: validation.reason || 'Swap does not match any campaign tasks'
+        reason: validation.reason || 'Swap does not match any campaign tasks',
+        warnings: validation.warnings,
       });
     }
 
@@ -153,28 +204,41 @@ export async function checkSwapTransaction(req: Request, res: Response) {
     if (!matchingTask) {
       return res.json({
         taskId: null,
+        status: 'confirmed',
         isValid: false,
-        reason: 'Swap does not match any campaign tasks'
+        reason: 'Swap does not match any campaign tasks',
+        details: {
+          outputToken: validation.outputToken,
+          expectedTokens: TASKS.map(t => ({ id: t.id, name: t.name, token: t.outputToken }))
+        }
       });
     }
+
+    // Success! Task matches
+    console.log(`✅ Task ${matchingTask.id} (${matchingTask.name}) validated!`);
 
     res.json({
       taskId: matchingTask.id,
       taskName: matchingTask.name,
+      status: 'confirmed',
       isValid: true,
+      confirmations: validation.confirmations,
       details: {
         inputToken: validation.inputToken,
         outputToken: matchingTask.name.split(' to ')[1],
         outputAddress: validation.outputToken,
-        amount: validation.amount,
-        timestamp: validation.timestamp
+        amount: validation.outputAmount,
+        timestamp: validation.timestamp,
+        blockNumber: validation.blockNumber?.toString(),
+        transactionIndex: validation.transactionIndex,
       }
     });
   } catch (error) {
     console.error('Error checking swap transaction:', error);
     res.status(500).json({
       error: 'Internal server error',
-      code: 'SERVER_ERROR'
+      code: 'SERVER_ERROR',
+      status: 'error'
     });
   }
 }
