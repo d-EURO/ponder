@@ -383,4 +383,10 @@ const health = await fetch(`${API_BASE_URL}/health`);
 REACT_APP_API_BASE_URL=http://localhost:3002
 REACT_APP_CHAIN_ID=5115
 REACT_APP_CAMPAIGN_ENABLED=true
+
+# Backend .env.api (separate database from Ponder)
+API_DATABASE_URL=postgresql://localhost:5432/bapps_campaign
+CITREA_RPC_URL=https://rpc.testnet.citrea.xyz
+CITREA_CHAIN_ID=5115
+API_PORT=3002
 ```

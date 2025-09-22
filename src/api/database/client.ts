@@ -3,9 +3,9 @@ import { config } from 'dotenv';
 
 config({ path: '.env.api' });
 
-// PostgreSQL connection pool
+// PostgreSQL connection pool for Campaign API (separate from Ponder DB)
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/bapps_campaign',
+  connectionString: process.env.API_DATABASE_URL || 'postgresql://localhost:5432/bapps_campaign',
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
