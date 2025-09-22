@@ -21,10 +21,8 @@ export const progressRateLimiter = rateLimit({
     error: 'Too many progress requests',
     code: 'RATE_LIMITED'
   },
-  keyGenerator: (req: Request) => {
-    // Rate limit by IP
-    return req.ip;
-  }
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Specific rate limiter for task completion endpoint
@@ -36,9 +34,10 @@ export const completeTaskRateLimiter = rateLimit({
     code: 'RATE_LIMITED'
   },
   keyGenerator: (req: Request) => {
-    // Rate limit by wallet address
-    return req.body.walletAddress || req.ip;
-  }
+    // Rate limit by wallet address if available, otherwise by IP
+    return req.body?.walletAddress || req.ip || 'unknown';
+  },
+  skip: (req: Request) => !req.body?.walletAddress && !req.ip,
 });
 
 // Specific rate limiter for swap check endpoint
@@ -49,8 +48,6 @@ export const checkSwapRateLimiter = rateLimit({
     error: 'Too many swap check requests',
     code: 'RATE_LIMITED'
   },
-  keyGenerator: (req: Request) => {
-    // Rate limit by IP
-    return req.ip;
-  }
+  standardHeaders: true,
+  legacyHeaders: false,
 });

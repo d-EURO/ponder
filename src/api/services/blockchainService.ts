@@ -1,5 +1,5 @@
 import { createPublicClient, http, parseAbi, decodeEventLog } from 'viem';
-import { CITREA_TESTNET, CITREA_TOKENS } from '../config/chains';
+import { CITREA_TESTNET, CITREA_TOKENS, JUICESWAP_ROUTERS } from '../config/chains';
 
 // Create Citrea client
 const citreaClient = createPublicClient({
@@ -80,6 +80,21 @@ export async function validateSwapTransaction(
       return {
         isValid: false,
         reason: 'Transaction failed'
+      };
+    }
+
+    // Check if transaction is to a JuiceSwap router
+    const toAddress = transaction.to?.toLowerCase();
+    const validRouters = Object.values(JUICESWAP_ROUTERS).map(addr => addr.toLowerCase());
+
+    if (!toAddress || !validRouters.includes(toAddress)) {
+      return {
+        isValid: false,
+        reason: 'Transaction not sent to JuiceSwap router',
+        details: {
+          to: transaction.to,
+          validRouters: Object.keys(JUICESWAP_ROUTERS)
+        }
       };
     }
 

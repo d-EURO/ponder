@@ -4,9 +4,9 @@ import { config } from 'dotenv';
 import campaignRoutes from './routes/campaign';
 import healthRoutes from './routes/health';
 import { errorHandler } from './middleware/errorHandler';
-import { rateLimiter } from './middleware/rateLimiter';
+// import { rateLimiter } from './middleware/rateLimiter';
 
-config();
+config({ path: '.env.api' });
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -24,7 +24,7 @@ const corsOptions = {
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(rateLimiter);
+// app.use(rateLimiter); // Temporarily disabled due to IPv6 warnings
 
 // Routes
 app.use('/health', healthRoutes);

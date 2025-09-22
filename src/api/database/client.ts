@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { config } from 'dotenv';
 
-config();
+config({ path: '.env.api' });
 
 // PostgreSQL connection pool
 export const pool = new Pool({
@@ -75,5 +75,4 @@ export async function cleanupExpiredCache(): Promise<void> {
   }
 }
 
-// Start periodic cache cleanup
-setInterval(cleanupExpiredCache, 5 * 60 * 1000); // Run every 5 minutes
+// Don't start cleanup on import - call manually when needed
