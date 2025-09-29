@@ -77,6 +77,7 @@ async function performSchemaReset(database, schema) {
 		};
 
 		await dropTablesInSchema(schema);
+		await dropTablesInSchema('ponder');
 		await dropTablesInSchema('ponder_sync');
 
 		await client.end();
