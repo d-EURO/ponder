@@ -8,4 +8,5 @@ USER node
 COPY --chown=node . .
 RUN yarn install --production --frozen-lockfile
 
-CMD ["yarn", "start"]
+CMD ["sh", "-c", "node schema-manager.js && yarn start"]
+
