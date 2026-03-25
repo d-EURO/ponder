@@ -1,6 +1,7 @@
-import { createConfig } from '@ponder/core';
+import { createConfig, factory } from 'ponder';
 import { mainnet, polygon } from 'viem/chains';
 import { Address, http } from 'viem';
+import { AbiEvent } from 'abitype';
 import {
 	ADDRESS,
 	EquityABI,
@@ -22,7 +23,6 @@ export const CONFIG = {
 		rpc: process.env.RPC_URL_MAINNET ?? mainnet.rpcUrls.default.http[0],
 		startStablecoin: 22088283,
 		startMintingHubV2: 22088283,
-		blockrange: 1000,
 		maxRequestsPerSecond: 50,
 		pollingInterval: 5_000,
 	},
@@ -30,7 +30,6 @@ export const CONFIG = {
 		rpc: process.env.RPC_URL_POLYGON ?? polygon.rpcUrls.default.http[0],
 		startStablecoin: 64985436,
 		startMintingHubV2: 64985436,
-		blockrange: 1000,
 		maxRequestsPerSecond: 50,
 		pollingInterval: 5_000,
 	},
@@ -38,77 +37,69 @@ export const CONFIG = {
 
 export const config = CONFIG[Id];
 
-const openPositionEventV2 = MintingHubV2ABI.find((a) => a.type === 'event' && a.name === 'PositionOpened');
-if (openPositionEventV2 === undefined) throw new Error('openPositionEventV2 not found.');
+const openPositionEventV2 = MintingHubV2ABI.find((a) => a.type === 'event' && a.name === 'PositionOpened') as AbiEvent;
+if (!openPositionEventV2) throw new Error('openPositionEventV2 not found.');
 
 export default createConfig({
-	networks: {
+	chains: {
 		[chain.name]: {
-			chainId: Id,
-			maxRequestsPerSecond: config.maxRequestsPerSecond,
+			id: Id,
+			rpc: http(config.rpc),
 			pollingInterval: config.pollingInterval,
-			transport: http(config.rpc),
 		},
 	},
 	contracts: {
 		Stablecoin: {
 			// Native
-			network: chain.name,
+			chain: chain.name,
 			abi: DecentralizedEUROABI,
 			address: ADDR.decentralizedEURO as Address,
 			startBlock: config.startStablecoin,
-			maxBlockRange: config.blockrange,
 		},
 		Equity: {
 			// Native
-			network: chain.name,
+			chain: chain.name,
 			abi: EquityABI,
 			address: ADDR.equity as Address,
 			startBlock: config.startStablecoin,
-			maxBlockRange: config.blockrange,
 		},
 		MintingHubV2: {
 			// V2
-			network: chain.name,
+			chain: chain.name,
 			abi: MintingHubV2ABI,
 			address: ADDR.mintingHubGateway as Address,
 			startBlock: config.startMintingHubV2,
-			maxBlockRange: config.blockrange,
 		},
 		PositionV2: {
 			// V2
-			network: chain.name,
+			chain: chain.name,
 			abi: PositionV2ABI,
-			factory: {
+			address: factory({
 				address: ADDR.mintingHubGateway as Address,
 				event: openPositionEventV2,
 				parameter: 'position',
-			},
+			}),
 			startBlock: config.startMintingHubV2,
-			maxBlockRange: config.blockrange,
 		},
 		Savings: {
 			// V2
-			network: chain.name,
+			chain: chain.name,
 			abi: SavingsABI,
 			address: ADDR.savingsGateway as Address,
 			startBlock: config.startMintingHubV2,
-			maxBlockRange: config.blockrange,
 		},
 		Roller: {
 			// V2
-			network: chain.name,
+			chain: chain.name,
 			abi: PositionRollerABI,
 			address: ADDR.roller as Address,
 			startBlock: config.startMintingHubV2,
-			maxBlockRange: config.blockrange,
 		},
 		FrontendGateway: {
-			network: chain.name,
+			chain: chain.name,
 			abi: FrontendGatewayABI,
 			address: ADDR.frontendGateway as Address,
 			startBlock: config.startMintingHubV2,
-			maxBlockRange: config.blockrange,
 		},
 	},
 });

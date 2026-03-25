@@ -1,325 +1,286 @@
-import { ponder } from '@/generated';
+import { ponder } from 'ponder:registry';
 import { PositionV2ABI } from '@deuro/eurocoin';
+import {
+	frontendCodeRegistered,
+	frontendCodeMapping,
+	investRewardAdded,
+	redeemRewardAdded,
+	unwrapAndSellRewardAdded,
+	savingsRewardAdded,
+	positionRewardAdded,
+	frontendRewardsMapping,
+	frontendRewardsVolumeMapping,
+	frontendBonusHistoryMapping,
+} from '../ponder.schema';
 
 ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) => {
-	const { FrontendCodeRegistered, FrontendCodeMapping } = context.db;
+	const { db } = context;
 	const { owner, frontendCode } = event.args;
 
-	// flat indexing
-	await FrontendCodeRegistered.create({
+	await db.insert(frontendCodeRegistered).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			owner,
-			frontendCode,
-			txHash: event.transaction.hash,
-			created: event.block.timestamp,
-		},
+		owner,
+		frontendCode,
+		txHash: event.transaction.hash,
+		created: event.block.timestamp,
 	});
 
-	await FrontendCodeMapping.upsert({
-		id: owner,
-		create: {
-			frontendCodes: [frontendCode],
-		},
-		update: (c) => ({
-			frontendCodes: [...c.current.frontendCodes, frontendCode],
-		}),
-	});
+	await db
+		.insert(frontendCodeMapping)
+		.values({ id: owner, frontendCodes: [frontendCode] })
+		.onConflictDoUpdate((row) => ({ frontendCodes: [...row.frontendCodes, frontendCode] }));
 });
 
 ponder.on('FrontendGateway:FrontendCodeTransferred', async ({ event, context }) => {
-	const { FrontendCodeRegistered, FrontendCodeMapping } = context.db;
+	const { db } = context;
 	const { from, to, frontendCode } = event.args;
 
-	// flat indexing
-	await FrontendCodeRegistered.create({
+	await db.insert(frontendCodeRegistered).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			created: event.block.timestamp,
-			owner: to,
-			frontendCode,
-			txHash: event.transaction.hash,
-		},
+		created: event.block.timestamp,
+		owner: to,
+		frontendCode,
+		txHash: event.transaction.hash,
 	});
 
-	await FrontendCodeMapping.upsert({
-		id: from,
-		create: {
-			frontendCodes: [],
-		},
-		update: (c) => ({
-			frontendCodes: c.current.frontendCodes.filter((code) => code !== frontendCode),
-		}),
-	});
+	await db
+		.insert(frontendCodeMapping)
+		.values({ id: from, frontendCodes: [] })
+		.onConflictDoUpdate((row) => ({ frontendCodes: row.frontendCodes.filter((code) => code !== frontendCode) }));
 
-	await FrontendCodeMapping.upsert({
-		id: to,
-		create: {
-			frontendCodes: [frontendCode],
-		},
-		update: (c) => ({
-			frontendCodes: [...c.current.frontendCodes, frontendCode],
-		}),
-	});
+	await db
+		.insert(frontendCodeMapping)
+		.values({ id: to, frontendCodes: [frontendCode] })
+		.onConflictDoUpdate((row) => ({ frontendCodes: [...row.frontendCodes, frontendCode] }));
 });
 
 ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
-	const { InvestRewardAdded, FrontendRewardsMapping, FrontendRewardsVolumeMapping, FrontendBonusHistoryMapping } = context.db;
+	const { db } = context;
 	const { user, amount, reward, frontendCode } = event.args;
 
-	await InvestRewardAdded.create({
+	await db.insert(investRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			user,
-			frontendCode,
-			amount,
-			reward,
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		user,
+		frontendCode,
+		amount,
+		reward,
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 
-	await FrontendRewardsMapping.upsert({
-		id: frontendCode,
-		create: {
+	await db
+		.insert(frontendRewardsMapping)
+		.values({
+			id: frontendCode,
 			totalReffered: 1,
-			referred: [user],
+			referred: [user.toLowerCase()],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
-		},
-		update: (c) => {
-			const referred = c.current.referred.includes(user) ? c.current.referred : [...c.current.referred, user];
+		})
+		.onConflictDoUpdate((row) => {
+			const referred = row.referred.includes(user.toLowerCase()) ? row.referred : [...row.referred, user.toLowerCase()];
 			return {
 				totalReffered: referred.length,
 				referred,
-				totalVolume: c.current.totalVolume + reward,
-				investVolume: c.current.investVolume + reward,
+				totalVolume: row.totalVolume + reward,
+				investVolume: row.investVolume + reward,
 			};
-		},
-	});
+		});
 
-	await FrontendRewardsVolumeMapping.upsert({
-		id: `${frontendCode}-${user}`,
-		create: {
+	await db
+		.insert(frontendRewardsVolumeMapping)
+		.values({
+			id: `${frontendCode.toLowerCase()}-${user.toLowerCase()}`,
 			frontendCode,
-			referred: user,
+			referred: user.toLowerCase(),
 			volume: reward,
 			timestamp: event.block.timestamp,
-		},
-		update: (c) => ({
-			volume: c.current.volume + reward,
-			timestamp: event.block.timestamp,
-		}),
-	});
+		})
+		.onConflictDoUpdate((row) => ({ volume: row.volume + reward, timestamp: event.block.timestamp }));
 
-	await FrontendBonusHistoryMapping.create({
+	await db.insert(frontendBonusHistoryMapping).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			frontendCode,
-			payout: reward,
-			source: 'InvestRewardAdded',
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		frontendCode,
+		payout: reward,
+		source: 'InvestRewardAdded',
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 });
 
 ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
-	const { RedeemRewardAdded, FrontendRewardsMapping, FrontendRewardsVolumeMapping, FrontendBonusHistoryMapping } = context.db;
+	const { db } = context;
 	const { user, amount, reward, frontendCode } = event.args;
 
-	await RedeemRewardAdded.create({
+	await db.insert(redeemRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			user,
-			amount,
-			reward,
-			frontendCode,
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		user,
+		amount,
+		reward,
+		frontendCode,
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 
-	await FrontendRewardsMapping.upsert({
-		id: frontendCode,
-		create: {
+	await db
+		.insert(frontendRewardsMapping)
+		.values({
+			id: frontendCode,
 			totalReffered: 1,
-			referred: [user],
+			referred: [user.toLowerCase()],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
-		},
-		update: (c) => {
-			const referred = c.current.referred.includes(user) ? c.current.referred : [...c.current.referred, user];
+		})
+		.onConflictDoUpdate((row) => {
+			const referred = row.referred.includes(user.toLowerCase()) ? row.referred : [...row.referred, user.toLowerCase()];
 			return {
 				totalReffered: referred.length,
 				referred,
-				totalVolume: c.current.totalVolume + reward,
-				investVolume: c.current.investVolume + reward,
+				totalVolume: row.totalVolume + reward,
+				investVolume: row.investVolume + reward,
 			};
-		},
-	});
+		});
 
-	await FrontendRewardsVolumeMapping.upsert({
-		id: `${frontendCode}-${user}`,
-		create: {
+	await db
+		.insert(frontendRewardsVolumeMapping)
+		.values({
+			id: `${frontendCode.toLowerCase()}-${user.toLowerCase()}`,
 			frontendCode,
-			referred: user,
+			referred: user.toLowerCase(),
 			volume: reward,
 			timestamp: event.block.timestamp,
-		},
-		update: (c) => ({
-			volume: c.current.volume + reward,
-			timestamp: event.block.timestamp,
-		}),
-	});
+		})
+		.onConflictDoUpdate((row) => ({ volume: row.volume + reward, timestamp: event.block.timestamp }));
 
-	await FrontendBonusHistoryMapping.create({
+	await db.insert(frontendBonusHistoryMapping).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			frontendCode,
-			payout: reward,
-			source: 'RedeemRewardAdded',
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		frontendCode,
+		payout: reward,
+		source: 'RedeemRewardAdded',
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 });
 
 ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context }) => {
-	const { UnwrapAndSellRewardAdded, FrontendRewardsMapping, FrontendRewardsVolumeMapping, FrontendBonusHistoryMapping } = context.db;
+	const { db } = context;
 	const { user, amount, reward, frontendCode } = event.args;
 
-	await UnwrapAndSellRewardAdded.create({
+	await db.insert(unwrapAndSellRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			user,
-			amount,
-			reward,
-			frontendCode,
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		user,
+		amount,
+		reward,
+		frontendCode,
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 
-	await FrontendRewardsMapping.upsert({
-		id: frontendCode,
-		create: {
+	await db
+		.insert(frontendRewardsMapping)
+		.values({
+			id: frontendCode,
 			totalReffered: 1,
-			referred: [user],
+			referred: [user.toLowerCase()],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
-		},
-		update: (c) => {
-			const referred = c.current.referred.includes(user) ? c.current.referred : [...c.current.referred, user];
+		})
+		.onConflictDoUpdate((row) => {
+			const referred = row.referred.includes(user.toLowerCase()) ? row.referred : [...row.referred, user.toLowerCase()];
 			return {
 				totalReffered: referred.length,
 				referred,
-				totalVolume: c.current.totalVolume + reward,
-				investVolume: c.current.investVolume + reward,
+				totalVolume: row.totalVolume + reward,
+				investVolume: row.investVolume + reward,
 			};
-		},
-	});
+		});
 
-	await FrontendRewardsVolumeMapping.upsert({
-		id: `${frontendCode}-${user}`,
-		create: {
+	await db
+		.insert(frontendRewardsVolumeMapping)
+		.values({
+			id: `${frontendCode.toLowerCase()}-${user.toLowerCase()}`,
 			frontendCode,
-			referred: user,
+			referred: user.toLowerCase(),
 			volume: reward,
 			timestamp: event.block.timestamp,
-		},
-		update: (c) => ({
-			volume: c.current.volume + reward,
-			timestamp: event.block.timestamp,
-		}),
-	});
+		})
+		.onConflictDoUpdate((row) => ({ volume: row.volume + reward, timestamp: event.block.timestamp }));
 
-	await FrontendBonusHistoryMapping.create({
+	await db.insert(frontendBonusHistoryMapping).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			frontendCode,
-			payout: reward,
-			source: 'UnwrapAndSellRewardAdded',
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		frontendCode,
+		payout: reward,
+		source: 'UnwrapAndSellRewardAdded',
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 });
 
 ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
-	const { SavingsRewardAdded, FrontendRewardsMapping, FrontendRewardsVolumeMapping, FrontendBonusHistoryMapping } = context.db;
+	const { db } = context;
 	const { saver, interest, reward, frontendCode } = event.args;
 
-	await SavingsRewardAdded.create({
+	await db.insert(savingsRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			user: saver,
-			interest,
-			reward,
-			frontendCode,
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		user: saver,
+		interest,
+		reward,
+		frontendCode,
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 
-	await FrontendRewardsMapping.upsert({
-		id: frontendCode,
-		create: {
+	await db
+		.insert(frontendRewardsMapping)
+		.values({
+			id: frontendCode,
 			totalReffered: 1,
-			referred: [saver],
+			referred: [saver.toLowerCase()],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
-		},
-		update: (c) => {
-			const referred = c.current.referred.includes(saver) ? c.current.referred : [...c.current.referred, saver];
+		})
+		.onConflictDoUpdate((row) => {
+			const referred = row.referred.includes(saver.toLowerCase()) ? row.referred : [...row.referred, saver.toLowerCase()];
 			return {
 				totalReffered: referred.length,
 				referred,
-				totalVolume: c.current.totalVolume + reward,
-				savingsVolume: c.current.savingsVolume + reward,
+				totalVolume: row.totalVolume + reward,
+				savingsVolume: row.savingsVolume + reward,
 			};
-		},
-	});
+		});
 
-	await FrontendRewardsVolumeMapping.upsert({
-		id: `${frontendCode}-${saver}`,
-		create: {
+	await db
+		.insert(frontendRewardsVolumeMapping)
+		.values({
+			id: `${frontendCode.toLowerCase()}-${saver.toLowerCase()}`,
 			frontendCode,
 			referred: saver,
 			volume: reward,
 			timestamp: event.block.timestamp,
-		},
-		update: (c) => ({
-			volume: c.current.volume + reward,
-			timestamp: event.block.timestamp,
-		}),
-	});
+		})
+		.onConflictDoUpdate((row) => ({ volume: row.volume + reward, timestamp: event.block.timestamp }));
 
-	await FrontendBonusHistoryMapping.create({
+	await db.insert(frontendBonusHistoryMapping).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			frontendCode,
-			payout: reward,
-			source: 'SavingsRewardAdded',
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		frontendCode,
+		payout: reward,
+		source: 'SavingsRewardAdded',
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 });
 
 ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
-	const { PositionRewardAdded, FrontendRewardsMapping, FrontendRewardsVolumeMapping, PositionV2, FrontendBonusHistoryMapping } =
-		context.db;
+	const { db, client } = context;
 	const { amount, reward, frontendCode, position } = event.args;
-	const { client } = context;
 
 	const owner = await client.readContract({
 		abi: PositionV2ABI,
@@ -331,62 +292,55 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 		return;
 	}
 
-	await PositionRewardAdded.create({
+	await db.insert(positionRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			user: owner,
-			position,
-			amount,
-			reward,
-			frontendCode,
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		user: owner.toLowerCase(),
+		position: position.toLowerCase(),
+		amount,
+		reward,
+		frontendCode: frontendCode.toLowerCase(),
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 
-	await FrontendRewardsMapping.upsert({
-		id: frontendCode,
-		create: {
-			referred: [owner],
+	await db
+		.insert(frontendRewardsMapping)
+		.values({
+			id: frontendCode.toLowerCase(),
+			referred: [owner.toLowerCase()],
 			totalReffered: 1,
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
-		},
-		update: (c) => {
-			const referred = c.current.referred.includes(owner) ? c.current.referred : [...c.current.referred, owner];
+		})
+		.onConflictDoUpdate((row) => {
+			const referred = row.referred.includes(owner.toLowerCase()) ? row.referred : [...row.referred, owner.toLowerCase()];
 			return {
 				referred,
 				totalReffered: referred.length,
-				totalVolume: c.current.totalVolume + reward,
-				loansVolume: c.current.loansVolume + reward,
+				totalVolume: row.totalVolume + reward,
+				loansVolume: row.loansVolume + reward,
 			};
-		},
-	});
+		});
 
-	await FrontendRewardsVolumeMapping.upsert({
-		id: `${frontendCode}-${owner}`,
-		create: {
-			frontendCode,
-			referred: owner,
+	await db
+		.insert(frontendRewardsVolumeMapping)
+		.values({
+			id: `${frontendCode.toLowerCase()}-${owner.toLowerCase()}`,
+			frontendCode: frontendCode.toLowerCase(),
+			referred: owner.toLowerCase(),
 			volume: reward,
 			timestamp: event.block.timestamp,
-		},
-		update: (c) => ({
-			volume: c.current.volume + reward,
-			timestamp: event.block.timestamp,
-		}),
-	});
+		})
+		.onConflictDoUpdate((row) => ({ volume: row.volume + reward, timestamp: event.block.timestamp }));
 
-	await FrontendBonusHistoryMapping.create({
+	await db.insert(frontendBonusHistoryMapping).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			frontendCode,
-			payout: reward,
-			source: 'PositionRewardAdded',
-			timestamp: event.block.timestamp,
-			txHash: event.transaction.hash,
-		},
+		frontendCode: frontendCode.toLowerCase(),
+		payout: reward,
+		source: 'PositionRewardAdded',
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
 	});
 });
