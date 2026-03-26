@@ -1,4 +1,5 @@
 import { ponder } from 'ponder:registry';
+import { getAddress } from 'viem';
 import { rollerRolled } from '../ponder.schema';
 
 ponder.on('Roller:Roll', async ({ event, context }) => {
@@ -9,11 +10,11 @@ ponder.on('Roller:Roll', async ({ event, context }) => {
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		created: event.block.timestamp,
 		blockheight: event.block.number,
-		owner: event.transaction.from,
-		source,
+		owner: getAddress(event.transaction.from),
+		source: getAddress(source),
 		collWithdraw,
 		repay,
-		target,
+		target: getAddress(target),
 		collDeposit,
 		mint,
 	});

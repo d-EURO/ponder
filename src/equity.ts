@@ -1,12 +1,12 @@
 import { ponder } from 'ponder:registry';
-import { Address, decodeFunctionData, RpcTransaction, zeroAddress } from 'viem';
+import { Address, decodeFunctionData, getAddress, RpcTransaction, zeroAddress } from 'viem';
 import { ADDR } from '../ponder.config';
 import { FrontendGatewayABI } from '@deuro/eurocoin';
 import { trade, votingPower, tradeChart, activeUser, ecosystem, deps, delegation } from '../ponder.schema';
 
 ponder.on('Equity:Trade', async ({ event, context }) => {
 	const { db } = context;
-	const trader: Address = event.args.who;
+	const trader: Address = getAddress(event.args.who);
 	const amount: bigint = event.args.totPrice;
 	const shares: bigint = event.args.amount;
 	const price: bigint = event.args.newprice;
@@ -30,7 +30,7 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 	}
 
 	await db.insert(trade).values({
-		id: event.args.who + '_' + time.toString(),
+		id: getAddress(event.args.who) + '_' + time.toString(),
 		trader,
 		amount,
 		shares,
@@ -73,9 +73,10 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 			.onConflictDoUpdate((row) => ({ amount: row.amount + amount * 3000n }));
 	}
 
+	const who = getAddress(event.args.who);
 	await db
 		.insert(votingPower)
-		.values({ id: event.args.who, address: event.args.who, votingPower: event.args.amount })
+		.values({ id: who, address: who, votingPower: event.args.amount })
 		.onConflictDoUpdate((row) => ({ votingPower: row.votingPower + event.args.amount }));
 
 	const startTime = (event.block.timestamp / 86400n) * 86400n;
@@ -86,13 +87,13 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.args.who, lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.args.who), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 
 	const feeCollected = amount - (amount * 980n) / 1000n;
 	await db
 		.insert(deps)
-		.values({ id: ADDR.decentralizedEURO.toLowerCase(), profits: feeCollected, loss: 0n, reserve: 0n })
+		.values({ id: ADDR.decentralizedEURO, profits: feeCollected, loss: 0n, reserve: 0n })
 		.onConflictDoUpdate((row) => ({ profits: row.profits + feeCollected }));
 });
 
@@ -101,36 +102,40 @@ ponder.on('Equity:Transfer', async ({ event, context }) => {
 
 	if (event.args.from == zeroAddress || event.args.to == zeroAddress) return;
 
+	const from = getAddress(event.args.from);
+	const to = getAddress(event.args.to);
 	await db
-		.update(votingPower, { id: event.args.from })
+		.update(votingPower, { id: from })
 		.set((row) => ({ votingPower: row.votingPower - event.args.value }));
 
 	await db
 		.insert(votingPower)
-		.values({ id: event.args.to, address: event.args.to, votingPower: event.args.value })
+		.values({ id: to, address: to, votingPower: event.args.value })
 		.onConflictDoUpdate((row) => ({ votingPower: row.votingPower + event.args.value }));
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.args.from, lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.args.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.args.to, lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.args.to), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
 ponder.on('Equity:Delegation', async ({ event, context }) => {
 	const { db } = context;
 
+	const delFrom = getAddress(event.args.from);
+	const delTo = getAddress(event.args.to);
 	await db
 		.insert(delegation)
-		.values({ id: event.args.from, owner: event.args.from, delegatedTo: event.args.to })
-		.onConflictDoUpdate(() => ({ delegatedTo: event.args.to }));
+		.values({ id: delFrom, owner: delFrom, delegatedTo: delTo })
+		.onConflictDoUpdate(() => ({ delegatedTo: delTo }));
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.args.from, lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.args.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });

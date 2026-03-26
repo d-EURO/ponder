@@ -1,4 +1,5 @@
 import { ponder } from 'ponder:registry';
+import { getAddress } from 'viem';
 import { PositionV2ABI as PositionABI, ERC20ABI } from '@deuro/eurocoin';
 import { positionV2, challengeV2, challengeBidV2, activeUser, ecosystem } from '../ponder.schema';
 
@@ -183,17 +184,17 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 
 	await db.insert(positionV2).values({
 		id: positionLc,
-		position: positionLc,
-		owner: ownerLc,
-		deuro: deuroLc,
-		collateral: collateralLc,
+		position: getAddress(positionLc),
+		owner: getAddress(ownerLc),
+		deuro: getAddress(deuroLc),
+		collateral: getAddress(collateralLc),
 		price,
 		created,
 		isOriginal,
 		isClone,
 		denied,
 		closed,
-		original: originalLc,
+		original: getAddress(originalLc),
 		minimumCollateral,
 		riskPremiumPPM,
 		reserveContribution,
@@ -224,7 +225,7 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.transaction.from.toLowerCase(), lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
@@ -253,9 +254,9 @@ ponder.on('MintingHubV2:ChallengeStarted', async ({ event, context }) => {
 
 	await db.insert(challengeV2).values({
 		id: getChallengeId(event.args.position, event.args.number),
-		position: event.args.position.toLowerCase(),
+		position: getAddress(event.args.position),
 		number: event.args.number,
-		challenger: event.args.challenger.toLowerCase(),
+		challenger: getAddress(event.args.challenger),
 		start: challenges[1],
 		created: event.block.timestamp,
 		duration: period,
@@ -274,7 +275,7 @@ ponder.on('MintingHubV2:ChallengeStarted', async ({ event, context }) => {
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.transaction.from.toLowerCase(), lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
@@ -315,10 +316,10 @@ ponder.on('MintingHubV2:ChallengeAverted', async ({ event, context }) => {
 
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
-		position: event.args.position.toLowerCase(),
+		position: getAddress(event.args.position),
 		number: event.args.number,
 		numberBid: challenge.bids,
-		bidder: event.transaction.from.toLowerCase(),
+		bidder: getAddress(event.transaction.from),
 		created: event.block.timestamp,
 		bidType: 'Averted',
 		bid: BigInt(_amount * 1e18),
@@ -345,7 +346,7 @@ ponder.on('MintingHubV2:ChallengeAverted', async ({ event, context }) => {
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.transaction.from.toLowerCase(), lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
@@ -379,10 +380,10 @@ ponder.on('MintingHubV2:ChallengeSucceeded', async ({ event, context }) => {
 
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
-		position: event.args.position.toLowerCase(),
+		position: getAddress(event.args.position),
 		number: event.args.number,
 		numberBid: challenge.bids,
-		bidder: event.transaction.from.toLowerCase(),
+		bidder: getAddress(event.transaction.from),
 		created: event.block.timestamp,
 		bidType: 'Succeeded',
 		bid: event.args.bid,
@@ -410,7 +411,7 @@ ponder.on('MintingHubV2:ChallengeSucceeded', async ({ event, context }) => {
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.transaction.from.toLowerCase(), lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 

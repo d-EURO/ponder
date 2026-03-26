@@ -1,7 +1,7 @@
 import { ponder } from 'ponder:registry';
 import { ERC20ABI, SavingsABI, SavingsGatewayABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
-import { Address, decodeFunctionData } from 'viem';
+import { Address, decodeFunctionData, getAddress } from 'viem';
 import {
 	savingsRateProposed,
 	savingsRateChanged,
@@ -26,7 +26,7 @@ ponder.on('Savings:RateProposed', async ({ event, context }) => {
 		created: event.block.timestamp,
 		blockheight: event.block.number,
 		txHash: event.transaction.hash,
-		proposer: who,
+		proposer: getAddress(who),
 		nextRate: nextRate,
 		nextChange: nextChange,
 	});

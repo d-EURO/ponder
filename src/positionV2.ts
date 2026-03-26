@@ -1,4 +1,5 @@
 import { ponder } from 'ponder:registry';
+import { getAddress } from 'viem';
 import { PositionV2ABI as PositionABI } from '@deuro/eurocoin';
 import { positionV2, mintingUpdateV2, ecosystem, activeUser } from '../ponder.schema';
 
@@ -106,10 +107,10 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			id: idMinting(1),
 			txHash: event.transaction.hash,
 			created: event.block.timestamp,
-			position: position.position,
-			owner: position.owner,
+			position: getAddress(position.position),
+			owner: getAddress(position.owner),
 			isClone: position.original.toLowerCase() != position.position.toLowerCase(),
-			collateral: position.collateral,
+			collateral: getAddress(position.collateral),
 			collateralName: position.collateralName,
 			collateralSymbol: position.collateralSymbol,
 			collateralDecimals: position.collateralDecimals,
@@ -139,10 +140,10 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			id: idMinting(mintingCounter),
 			txHash: event.transaction.hash,
 			created: event.block.timestamp,
-			position: position.position,
-			owner: position.owner,
+			position: getAddress(position.position),
+			owner: getAddress(position.owner),
 			isClone: position.original.toLowerCase() != position.position.toLowerCase(),
-			collateral: position.collateral,
+			collateral: getAddress(position.collateral),
 			collateralName: position.collateralName,
 			collateralSymbol: position.collateralSymbol,
 			collateralDecimals: position.collateralDecimals,
@@ -164,7 +165,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.transaction.from.toLowerCase(), lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
@@ -188,7 +189,7 @@ ponder.on('PositionV2:PositionDenied', async ({ event, context }) => {
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.transaction.from.toLowerCase(), lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
@@ -198,12 +199,12 @@ ponder.on('PositionV2:OwnershipTransferred', async ({ event, context }) => {
 	const position = await db.find(positionV2, { id: event.log.address.toLowerCase() });
 	if (position) {
 		await db.update(positionV2, { id: event.log.address.toLowerCase() }).set({
-			owner: event.args.newOwner.toLowerCase(),
+			owner: getAddress(event.args.newOwner),
 		});
 	}
 
 	await db
 		.insert(activeUser)
-		.values({ id: event.transaction.from.toLowerCase(), lastActiveTime: event.block.timestamp })
+		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });

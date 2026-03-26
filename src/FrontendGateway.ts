@@ -12,6 +12,7 @@ import {
 	frontendRewardsVolumeMapping,
 	frontendBonusHistoryMapping,
 } from '../ponder.schema';
+import { getAddress } from 'viem';
 
 ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) => {
 	const { db } = context;
@@ -19,7 +20,7 @@ ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) =
 
 	await db.insert(frontendCodeRegistered).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		owner,
+		owner: getAddress(owner),
 		frontendCode,
 		txHash: event.transaction.hash,
 		created: event.block.timestamp,
@@ -27,7 +28,7 @@ ponder.on('FrontendGateway:FrontendCodeRegistered', async ({ event, context }) =
 
 	await db
 		.insert(frontendCodeMapping)
-		.values({ id: owner, frontendCodes: [frontendCode] })
+		.values({ id: getAddress(owner), frontendCodes: [frontendCode] })
 		.onConflictDoUpdate((row) => ({ frontendCodes: [...row.frontendCodes, frontendCode] }));
 });
 
@@ -38,19 +39,19 @@ ponder.on('FrontendGateway:FrontendCodeTransferred', async ({ event, context }) 
 	await db.insert(frontendCodeRegistered).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		created: event.block.timestamp,
-		owner: to,
+		owner: getAddress(to),
 		frontendCode,
 		txHash: event.transaction.hash,
 	});
 
 	await db
 		.insert(frontendCodeMapping)
-		.values({ id: from, frontendCodes: [] })
+		.values({ id: getAddress(from), frontendCodes: [] })
 		.onConflictDoUpdate((row) => ({ frontendCodes: row.frontendCodes.filter((code) => code !== frontendCode) }));
 
 	await db
 		.insert(frontendCodeMapping)
-		.values({ id: to, frontendCodes: [frontendCode] })
+		.values({ id: getAddress(to), frontendCodes: [frontendCode] })
 		.onConflictDoUpdate((row) => ({ frontendCodes: [...row.frontendCodes, frontendCode] }));
 });
 
@@ -60,7 +61,7 @@ ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
 
 	await db.insert(investRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		user,
+		user: getAddress(user),
 		frontendCode,
 		amount,
 		reward,
@@ -73,14 +74,14 @@ ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
 		.values({
 			id: frontendCode,
 			totalReffered: 1,
-			referred: [user.toLowerCase()],
+			referred: [getAddress(user)],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
 		})
 		.onConflictDoUpdate((row) => {
-			const referred = row.referred.includes(user.toLowerCase()) ? row.referred : [...row.referred, user.toLowerCase()];
+			const referred = row.referred.includes(getAddress(user)) ? row.referred : [...row.referred, getAddress(user)];
 			return {
 				totalReffered: referred.length,
 				referred,
@@ -92,9 +93,9 @@ ponder.on('FrontendGateway:InvestRewardAdded', async ({ event, context }) => {
 	await db
 		.insert(frontendRewardsVolumeMapping)
 		.values({
-			id: `${frontendCode.toLowerCase()}-${user.toLowerCase()}`,
+			id: `${frontendCode.toLowerCase()}-${getAddress(user)}`,
 			frontendCode,
-			referred: user.toLowerCase(),
+			referred: getAddress(user),
 			volume: reward,
 			timestamp: event.block.timestamp,
 		})
@@ -116,7 +117,7 @@ ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
 
 	await db.insert(redeemRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		user,
+		user: getAddress(user),
 		amount,
 		reward,
 		frontendCode,
@@ -129,14 +130,14 @@ ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
 		.values({
 			id: frontendCode,
 			totalReffered: 1,
-			referred: [user.toLowerCase()],
+			referred: [getAddress(user)],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
 		})
 		.onConflictDoUpdate((row) => {
-			const referred = row.referred.includes(user.toLowerCase()) ? row.referred : [...row.referred, user.toLowerCase()];
+			const referred = row.referred.includes(getAddress(user)) ? row.referred : [...row.referred, getAddress(user)];
 			return {
 				totalReffered: referred.length,
 				referred,
@@ -148,9 +149,9 @@ ponder.on('FrontendGateway:RedeemRewardAdded', async ({ event, context }) => {
 	await db
 		.insert(frontendRewardsVolumeMapping)
 		.values({
-			id: `${frontendCode.toLowerCase()}-${user.toLowerCase()}`,
+			id: `${frontendCode.toLowerCase()}-${getAddress(user)}`,
 			frontendCode,
-			referred: user.toLowerCase(),
+			referred: getAddress(user),
 			volume: reward,
 			timestamp: event.block.timestamp,
 		})
@@ -172,7 +173,7 @@ ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context })
 
 	await db.insert(unwrapAndSellRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		user,
+		user: getAddress(user),
 		amount,
 		reward,
 		frontendCode,
@@ -185,14 +186,14 @@ ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context })
 		.values({
 			id: frontendCode,
 			totalReffered: 1,
-			referred: [user.toLowerCase()],
+			referred: [getAddress(user)],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
 		})
 		.onConflictDoUpdate((row) => {
-			const referred = row.referred.includes(user.toLowerCase()) ? row.referred : [...row.referred, user.toLowerCase()];
+			const referred = row.referred.includes(getAddress(user)) ? row.referred : [...row.referred, getAddress(user)];
 			return {
 				totalReffered: referred.length,
 				referred,
@@ -204,9 +205,9 @@ ponder.on('FrontendGateway:UnwrapAndSellRewardAdded', async ({ event, context })
 	await db
 		.insert(frontendRewardsVolumeMapping)
 		.values({
-			id: `${frontendCode.toLowerCase()}-${user.toLowerCase()}`,
+			id: `${frontendCode.toLowerCase()}-${getAddress(user)}`,
 			frontendCode,
-			referred: user.toLowerCase(),
+			referred: getAddress(user),
 			volume: reward,
 			timestamp: event.block.timestamp,
 		})
@@ -228,7 +229,7 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 
 	await db.insert(savingsRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		user: saver,
+		user: getAddress(saver),
 		interest,
 		reward,
 		frontendCode,
@@ -241,14 +242,14 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 		.values({
 			id: frontendCode,
 			totalReffered: 1,
-			referred: [saver.toLowerCase()],
+			referred: [getAddress(saver)],
 			totalVolume: reward,
 			loansVolume: 0n,
 			investVolume: 0n,
 			savingsVolume: 0n,
 		})
 		.onConflictDoUpdate((row) => {
-			const referred = row.referred.includes(saver.toLowerCase()) ? row.referred : [...row.referred, saver.toLowerCase()];
+			const referred = row.referred.includes(getAddress(saver)) ? row.referred : [...row.referred, getAddress(saver)];
 			return {
 				totalReffered: referred.length,
 				referred,
@@ -260,9 +261,9 @@ ponder.on('FrontendGateway:SavingsRewardAdded', async ({ event, context }) => {
 	await db
 		.insert(frontendRewardsVolumeMapping)
 		.values({
-			id: `${frontendCode.toLowerCase()}-${saver.toLowerCase()}`,
+			id: `${frontendCode.toLowerCase()}-${getAddress(saver)}`,
 			frontendCode,
-			referred: saver,
+			referred: getAddress(saver),
 			volume: reward,
 			timestamp: event.block.timestamp,
 		})
@@ -294,8 +295,8 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 
 	await db.insert(positionRewardAdded).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		user: owner.toLowerCase(),
-		position: position.toLowerCase(),
+		user: getAddress(owner),
+		position: getAddress(position),
 		amount,
 		reward,
 		frontendCode: frontendCode.toLowerCase(),
@@ -307,7 +308,7 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 		.insert(frontendRewardsMapping)
 		.values({
 			id: frontendCode.toLowerCase(),
-			referred: [owner.toLowerCase()],
+			referred: [getAddress(owner)],
 			totalReffered: 1,
 			totalVolume: reward,
 			loansVolume: 0n,
@@ -315,7 +316,7 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 			savingsVolume: 0n,
 		})
 		.onConflictDoUpdate((row) => {
-			const referred = row.referred.includes(owner.toLowerCase()) ? row.referred : [...row.referred, owner.toLowerCase()];
+			const referred = row.referred.includes(getAddress(owner)) ? row.referred : [...row.referred, getAddress(owner)];
 			return {
 				referred,
 				totalReffered: referred.length,
@@ -327,9 +328,9 @@ ponder.on('FrontendGateway:PositionRewardAdded', async ({ event, context }) => {
 	await db
 		.insert(frontendRewardsVolumeMapping)
 		.values({
-			id: `${frontendCode.toLowerCase()}-${owner.toLowerCase()}`,
+			id: `${frontendCode.toLowerCase()}-${getAddress(owner)}`,
 			frontendCode: frontendCode.toLowerCase(),
-			referred: owner.toLowerCase(),
+			referred: getAddress(owner),
 			volume: reward,
 			timestamp: event.block.timestamp,
 		})
