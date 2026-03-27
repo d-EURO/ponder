@@ -8,5 +8,4 @@ USER node
 COPY --chown=node . .
 RUN yarn install --production --frozen-lockfile
 
-CMD ["sh", "-c", "node schema-manager.js && yarn start"]
-
+CMD ["sh", "-c", "npx ponder start --schema schema-${COMMIT_HASH}"]
