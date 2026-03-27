@@ -8,14 +8,12 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 	const { client, db } = context;
 
 	const { owner, position, original, collateral } = event.args;
-	const ownerLc = owner.toLowerCase();
-	const positionLc = position.toLowerCase();
-	const originalLc = original.toLowerCase();
-	const collateralLc = collateral.toLowerCase();
+	const positionId = position.toLowerCase();
+	const originalId = original.toLowerCase();
 
 	const created: bigint = event.block.timestamp;
 
-	const isOriginal: boolean = original.toLowerCase() === position.toLowerCase();
+	const isOriginal: boolean = originalId === positionId;
 	const isClone: boolean = !isOriginal;
 	const closed: boolean = false;
 	const denied: boolean = false;
@@ -25,7 +23,6 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		address: position,
 		functionName: 'deuro',
 	});
-	const deuroLc = deuro.toLowerCase();
 
 	const minimumCollateral = await client.readContract({
 		abi: PositionABI,
@@ -176,25 +173,25 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 			functionName: 'availableForMinting',
 		});
 
-		await db.update(positionV2, { id: originalLc }).set({
+		await db.update(positionV2, { id: originalId }).set({
 			availableForClones: originalAvailableForClones,
 			availableForMinting: originalAvailableForMinting,
 		});
 	}
 
 	await db.insert(positionV2).values({
-		id: positionLc,
-		position: getAddress(positionLc),
-		owner: getAddress(ownerLc),
-		deuro: getAddress(deuroLc),
-		collateral: getAddress(collateralLc),
+		id: positionId,
+		position: getAddress(position),
+		owner: getAddress(owner),
+		deuro: getAddress(deuro),
+		collateral: getAddress(collateral),
 		price,
 		created,
 		isOriginal,
 		isClone,
 		denied,
 		closed,
-		original: getAddress(originalLc),
+		original: getAddress(original),
 		minimumCollateral,
 		riskPremiumPPM,
 		reserveContribution,

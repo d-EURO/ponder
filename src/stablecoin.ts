@@ -320,9 +320,9 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 		});
 
 		const logIndex = event.log.logIndex;
-		const deuroLogIndex = receipt?.logs.findIndex((log) => Number(log.logIndex) === logIndex);
-		const previousLog = deuroLogIndex ? receipt?.logs[deuroLogIndex - 1] : undefined;
-		const nextLog = deuroLogIndex ? receipt?.logs[deuroLogIndex + 1] : undefined;
+		const deuroLogIndex = receipt?.logs.findIndex((log) => Number(log.logIndex) === logIndex) ?? -1;
+		const previousLog = deuroLogIndex > 0 ? receipt?.logs[deuroLogIndex - 1] : undefined;
+		const nextLog = deuroLogIndex >= 0 ? receipt?.logs[deuroLogIndex + 1] : undefined;
 		const potencialBrigeLog = bridgeData.isMint ? previousLog : nextLog;
 		const bridgeAddress =
 			potencialBrigeLog && stablecoinToBridge[potencialBrigeLog.address.toLowerCase() as keyof typeof stablecoinToBridge];
