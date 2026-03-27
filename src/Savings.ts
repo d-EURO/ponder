@@ -1,54 +1,52 @@
-import { ponder } from '@/generated';
+import { ponder } from 'ponder:registry';
 import { ERC20ABI, SavingsABI, SavingsGatewayABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
-import { Address, decodeFunctionData } from 'viem';
+import { Address, decodeFunctionData, getAddress } from 'viem';
+import {
+	savingsRateProposed,
+	savingsRateChanged,
+	savingsSaved,
+	savingsSavedMapping,
+	savingsInterest,
+	savingsInterestMapping,
+	savingsWithdrawn,
+	savingsWithdrawnMapping,
+	savingsUserLeaderboard,
+	savingsStats,
+	savingsTotalHistory,
+	ecosystem,
+} from '../ponder.schema';
 
 ponder.on('Savings:RateProposed', async ({ event, context }) => {
-	const { SavingsRateProposed } = context.db;
+	const { db } = context;
 	const { who, nextChange, nextRate } = event.args;
 
-	// flat indexing
-	await SavingsRateProposed.create({
+	await db.insert(savingsRateProposed).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			created: event.block.timestamp,
-			blockheight: event.block.number,
-			txHash: event.transaction.hash,
-			proposer: who,
-			nextRate: nextRate,
-			nextChange: nextChange,
-		},
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		txHash: event.transaction.hash,
+		proposer: getAddress(who),
+		nextRate: nextRate,
+		nextChange: nextChange,
 	});
 });
 
 ponder.on('Savings:RateChanged', async ({ event, context }) => {
-	const { SavingsRateChanged } = context.db;
+	const { db } = context;
 	const { newRate } = event.args;
 
-	// flat indexing
-	await SavingsRateChanged.create({
+	await db.insert(savingsRateChanged).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			created: event.block.timestamp,
-			blockheight: event.block.number,
-			txHash: event.transaction.hash,
-			approvedRate: newRate,
-		},
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		txHash: event.transaction.hash,
+		approvedRate: newRate,
 	});
 });
 
 ponder.on('Savings:Saved', async ({ event, context }) => {
-	const { client } = context;
-	const {
-		SavingsSaved,
-		SavingsSavedMapping,
-		SavingsWithdrawnMapping,
-		SavingsInterestMapping,
-		Ecosystem,
-		SavingsUserLeaderboard,
-		SavingsTotalHistory,
-		SavingsStats,
-	} = context.db;
+	const { client, db } = context;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -59,7 +57,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 	});
 
 	let frontendCode: string | undefined;
-	if (event.transaction.to === ADDR.savingsGateway) {
+	if (event.transaction.to?.toLowerCase() === ADDR.savingsGateway.toLowerCase()) {
 		const { args } = decodeFunctionData({
 			abi: SavingsGatewayABI,
 			data: event.transaction.input,
@@ -67,62 +65,45 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		frontendCode = args.at(-1) as string;
 	}
 
-	// map indexing
-	await SavingsSavedMapping.upsert({
-		id: account,
-		create: {
+	await db
+		.insert(savingsSavedMapping)
+		.values({
+			id: account,
 			created: event.block.timestamp,
 			blockheight: event.block.number,
 			updated: event.block.timestamp,
 			amount,
-		},
-		update: (c) => ({
+		})
+		.onConflictDoUpdate((row) => ({
 			updated: event.block.timestamp,
-			amount: c.current.amount + amount,
-		}),
-	});
+			amount: row.amount + amount,
+		}));
 
-	const latestSaved = await SavingsSavedMapping.findUnique({
-		id: account,
-	});
-	const latestWithdraw = await SavingsWithdrawnMapping.findUnique({
-		id: account,
-	});
-	const latestInterest = await SavingsInterestMapping.findUnique({
-		id: account,
-	});
+	const latestSaved = await db.find(savingsSavedMapping, { id: account });
+	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: account });
+	const latestInterest = await db.find(savingsInterestMapping, { id: account });
 
 	const balance: bigint = latestSaved
 		? latestSaved.amount - (latestWithdraw ? latestWithdraw.amount : 0n) + (latestInterest ? latestInterest.amount : 0n)
 		: 0n;
 
-	// flat indexing
-	await SavingsSaved.create({
+	await db.insert(savingsSaved).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			created: event.block.timestamp,
-			blockheight: event.block.number,
-			account: account,
-			txHash: event.transaction.hash,
-			amount,
-			rate: ratePPM,
-			total: latestSaved ? latestSaved.amount : amount,
-			balance,
-			frontendCode,
-		},
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		account: account,
+		txHash: event.transaction.hash,
+		amount,
+		rate: ratePPM,
+		total: latestSaved ? latestSaved.amount : amount,
+		balance,
+		frontendCode: frontendCode ?? null,
 	});
 
-	// ecosystem
-	await Ecosystem.upsert({
-		id: `Savings:TotalSaved`,
-		create: {
-			value: '',
-			amount: amount,
-		},
-		update: ({ current }) => ({
-			amount: current.amount + amount,
-		}),
-	});
+	await db
+		.insert(ecosystem)
+		.values({ id: 'Savings:TotalSaved', value: '', amount: amount })
+		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
 	const [amountSaved] = await client.readContract({
 		abi: SavingsABI,
@@ -131,34 +112,22 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		args: [account],
 	});
 
-	// Check if this is a new user BEFORE upsert
-	const existingUser = await SavingsUserLeaderboard.findUnique({ id: account });
-	
-	await SavingsUserLeaderboard.upsert({
-		id: account,
-		create: {
-			amountSaved,
-			interestReceived: 0n,
-		},
-		update: () => ({
-			amountSaved,
-		}),
-	});
+	const existingUser = await db.find(savingsUserLeaderboard, { id: account });
 
-	// Update total users count only for new users
+	await db
+		.insert(savingsUserLeaderboard)
+		.values({ id: account, amountSaved, interestReceived: 0n })
+		.onConflictDoUpdate(() => ({ amountSaved }));
+
 	if (!existingUser) {
-		const currentStats = await SavingsStats.findUnique({ id: 'global' });
-		await SavingsStats.upsert({
-			id: 'global',
-			create: {
-				totalUsers: 1,
-				lastUpdated: event.block.timestamp,
-			},
-			update: {
+		const currentStats = await db.find(savingsStats, { id: 'global' });
+		await db
+			.insert(savingsStats)
+			.values({ id: 'global', totalUsers: 1, lastUpdated: event.block.timestamp })
+			.onConflictDoUpdate(() => ({
 				totalUsers: (currentStats?.totalUsers || 0) + 1,
 				lastUpdated: event.block.timestamp,
-			},
-		});
+			}));
 	}
 
 	const totalSaved = await context.client.readContract({
@@ -169,22 +138,14 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 	});
 
 	const startTime = (event.block.timestamp / 86400n) * 86400n;
-	await SavingsTotalHistory.upsert({
-		id: startTime.toString(),
-		create: {
-			time: startTime,
-			total: totalSaved,
-		},
-		update: () => ({
-			total: totalSaved,
-		}),
-	});
+	await db
+		.insert(savingsTotalHistory)
+		.values({ id: startTime.toString(), time: startTime, total: totalSaved })
+		.onConflictDoUpdate(() => ({ total: totalSaved }));
 });
 
 ponder.on('Savings:InterestCollected', async ({ event, context }) => {
-	const { client } = context;
-	const { SavingsInterest, SavingsSavedMapping, SavingsWithdrawnMapping, SavingsInterestMapping, Ecosystem, SavingsUserLeaderboard } =
-		context.db;
+	const { client, db } = context;
 	const { interest } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -194,61 +155,44 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 		functionName: 'currentRatePPM',
 	});
 
-	// map indexing
-	await SavingsInterestMapping.upsert({
-		id: account,
-		create: {
+	await db
+		.insert(savingsInterestMapping)
+		.values({
+			id: account,
 			created: event.block.timestamp,
 			blockheight: event.block.number,
 			updated: event.block.timestamp,
 			amount: interest,
-		},
-		update: (c) => ({
+		})
+		.onConflictDoUpdate((row) => ({
 			updated: event.block.timestamp,
-			amount: c.current.amount + interest,
-		}),
-	});
+			amount: row.amount + interest,
+		}));
 
-	const latestSaved = await SavingsSavedMapping.findUnique({
-		id: account,
-	});
-	const latestWithdraw = await SavingsWithdrawnMapping.findUnique({
-		id: account,
-	});
-	const latestInterest = await SavingsInterestMapping.findUnique({
-		id: account,
-	});
+	const latestSaved = await db.find(savingsSavedMapping, { id: account });
+	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: account });
+	const latestInterest = await db.find(savingsInterestMapping, { id: account });
 
 	const balance: bigint = latestSaved
 		? latestSaved.amount - (latestWithdraw ? latestWithdraw.amount : 0n) + (latestInterest ? latestInterest.amount : 0n)
 		: 0n;
 
-	// flat indexing
-	await SavingsInterest.create({
+	await db.insert(savingsInterest).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			created: event.block.timestamp,
-			blockheight: event.block.number,
-			txHash: event.transaction.hash,
-			account: account,
-			amount: interest,
-			rate: ratePPM,
-			total: latestInterest ? latestInterest.amount : interest,
-			balance,
-		},
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		txHash: event.transaction.hash,
+		account: account,
+		amount: interest,
+		rate: ratePPM,
+		total: latestInterest ? latestInterest.amount : interest,
+		balance,
 	});
 
-	// ecosystem
-	await Ecosystem.upsert({
-		id: `Savings:TotalInterestCollected`,
-		create: {
-			value: '',
-			amount: interest,
-		},
-		update: ({ current }) => ({
-			amount: current.amount + interest,
-		}),
-	});
+	await db
+		.insert(ecosystem)
+		.values({ id: 'Savings:TotalInterestCollected', value: '', amount: interest })
+		.onConflictDoUpdate((row) => ({ amount: row.amount + interest }));
 
 	const [amountSaved] = await client.readContract({
 		abi: SavingsABI,
@@ -257,30 +201,17 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 		args: [account],
 	});
 
-	await SavingsUserLeaderboard.upsert({
-		id: account,
-		create: {
+	await db
+		.insert(savingsUserLeaderboard)
+		.values({ id: account, amountSaved, interestReceived: 0n })
+		.onConflictDoUpdate((row) => ({
 			amountSaved,
-			interestReceived: 0n,
-		},
-		update: ({ current }) => ({
-			amountSaved,
-			interestReceived: current.interestReceived + interest,
-		}),
-	});
+			interestReceived: row.interestReceived + interest,
+		}));
 });
 
 ponder.on('Savings:Withdrawn', async ({ event, context }) => {
-	const { client } = context;
-	const {
-		SavingsWithdrawn,
-		SavingsSavedMapping,
-		SavingsWithdrawnMapping,
-		SavingsInterestMapping,
-		Ecosystem,
-		SavingsUserLeaderboard,
-		SavingsTotalHistory,
-	} = context.db;
+	const { client, db } = context;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
 
@@ -290,61 +221,44 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		functionName: 'currentRatePPM',
 	});
 
-	// map indexing
-	await SavingsWithdrawnMapping.upsert({
-		id: account,
-		create: {
+	await db
+		.insert(savingsWithdrawnMapping)
+		.values({
+			id: account,
 			created: event.block.timestamp,
 			blockheight: event.block.number,
 			updated: event.block.timestamp,
 			amount,
-		},
-		update: (c) => ({
+		})
+		.onConflictDoUpdate((row) => ({
 			updated: event.block.timestamp,
-			amount: c.current.amount + amount,
-		}),
-	});
+			amount: row.amount + amount,
+		}));
 
-	const latestSaved = await SavingsSavedMapping.findUnique({
-		id: account,
-	});
-	const latestWithdraw = await SavingsWithdrawnMapping.findUnique({
-		id: account,
-	});
-	const latestInterest = await SavingsInterestMapping.findUnique({
-		id: account,
-	});
+	const latestSaved = await db.find(savingsSavedMapping, { id: account });
+	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: account });
+	const latestInterest = await db.find(savingsInterestMapping, { id: account });
 
 	const balance: bigint = latestSaved
 		? latestSaved.amount - (latestWithdraw ? latestWithdraw.amount : 0n) + (latestInterest ? latestInterest.amount : 0n)
 		: 0n;
 
-	// flat indexing
-	await SavingsWithdrawn.create({
+	await db.insert(savingsWithdrawn).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			created: event.block.timestamp,
-			blockheight: event.block.number,
-			txHash: event.transaction.hash,
-			account: account,
-			amount,
-			rate: ratePPM,
-			total: latestWithdraw ? latestWithdraw.amount : amount,
-			balance,
-		},
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		txHash: event.transaction.hash,
+		account: account,
+		amount,
+		rate: ratePPM,
+		total: latestWithdraw ? latestWithdraw.amount : amount,
+		balance,
 	});
 
-	// ecosystem
-	await Ecosystem.upsert({
-		id: `Savings:TotalWithdrawn`,
-		create: {
-			value: '',
-			amount: amount,
-		},
-		update: ({ current }) => ({
-			amount: current.amount + amount,
-		}),
-	});
+	await db
+		.insert(ecosystem)
+		.values({ id: 'Savings:TotalWithdrawn', value: '', amount: amount })
+		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
 	const [amountSaved] = await client.readContract({
 		abi: SavingsABI,
@@ -353,18 +267,10 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		args: [account],
 	});
 
-	// Update leaderboard but DON'T count as new user
-	// Users are only counted when they first SAVE (deposit)
-	await SavingsUserLeaderboard.upsert({
-		id: account,
-		create: {
-			amountSaved,
-			interestReceived: 0n,
-		},
-		update: () => ({
-			amountSaved,
-		}),
-	});
+	await db
+		.insert(savingsUserLeaderboard)
+		.values({ id: account, amountSaved, interestReceived: 0n })
+		.onConflictDoUpdate(() => ({ amountSaved }));
 
 	const totalSaved = await context.client.readContract({
 		abi: ERC20ABI,
@@ -374,14 +280,8 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 	});
 
 	const startTime = (event.block.timestamp / 86400n) * 86400n;
-	await SavingsTotalHistory.upsert({
-		id: startTime.toString(),
-		create: {
-			time: startTime,
-			total: totalSaved,
-		},
-		update: () => ({
-			total: totalSaved,
-		}),
-	});
+	await db
+		.insert(savingsTotalHistory)
+		.values({ id: startTime.toString(), time: startTime, total: totalSaved })
+		.onConflictDoUpdate(() => ({ total: totalSaved }));
 });

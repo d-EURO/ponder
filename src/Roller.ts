@@ -1,22 +1,21 @@
-import { ponder } from '@/generated';
+import { ponder } from 'ponder:registry';
+import { getAddress } from 'viem';
+import { rollerRolled } from '../ponder.schema';
 
 ponder.on('Roller:Roll', async ({ event, context }) => {
-	const { RollerRolled } = context.db;
+	const { db } = context;
 	const { source, collWithdraw, repay, target, collDeposit, mint } = event.args;
 
-	// flat indexing
-	await RollerRolled.create({
+	await db.insert(rollerRolled).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
-		data: {
-			created: event.block.timestamp,
-			blockheight: event.block.number,
-			owner: event.transaction.from,
-			source,
-			collWithdraw,
-			repay,
-			target,
-			collDeposit,
-			mint,
-		},
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		owner: getAddress(event.transaction.from),
+		source: getAddress(source),
+		collWithdraw,
+		repay,
+		target: getAddress(target),
+		collDeposit,
+		mint,
 	});
 });
