@@ -1,5 +1,5 @@
 import { ponder } from 'ponder:registry';
-import { ERC20ABI, SavingsABI, SavingsGatewayABI } from '@deuro/eurocoin';
+import { ERC20ABI, SavingsV2ABI, SavingsGatewayV2ABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
 import { Address, decodeFunctionData, getAddress } from 'viem';
 import {
@@ -51,7 +51,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 	const account: Address = event.args.account.toLowerCase() as Address;
 
 	const ratePPM = await client.readContract({
-		abi: SavingsABI,
+		abi: SavingsV2ABI,
 		address: ADDR.savingsGateway,
 		functionName: 'currentRatePPM',
 	});
@@ -59,7 +59,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 	let frontendCode: string | undefined;
 	if (event.transaction.to?.toLowerCase() === ADDR.savingsGateway.toLowerCase()) {
 		const { args } = decodeFunctionData({
-			abi: SavingsGatewayABI,
+			abi: SavingsGatewayV2ABI,
 			data: event.transaction.input,
 		});
 		frontendCode = args.at(-1) as string;
@@ -106,7 +106,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
 	const [amountSaved] = await client.readContract({
-		abi: SavingsABI,
+		abi: SavingsV2ABI,
 		address: ADDR.savingsGateway,
 		functionName: 'savings',
 		args: [account],
@@ -150,7 +150,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 	const account: Address = event.args.account.toLowerCase() as Address;
 
 	const ratePPM = await client.readContract({
-		abi: SavingsABI,
+		abi: SavingsV2ABI,
 		address: ADDR.savingsGateway,
 		functionName: 'currentRatePPM',
 	});
@@ -195,7 +195,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 		.onConflictDoUpdate((row) => ({ amount: row.amount + interest }));
 
 	const [amountSaved] = await client.readContract({
-		abi: SavingsABI,
+		abi: SavingsV2ABI,
 		address: ADDR.savingsGateway,
 		functionName: 'savings',
 		args: [account],
@@ -216,7 +216,7 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 	const account: Address = event.args.account.toLowerCase() as Address;
 
 	const ratePPM = await client.readContract({
-		abi: SavingsABI,
+		abi: SavingsV2ABI,
 		address: ADDR.savingsGateway,
 		functionName: 'currentRatePPM',
 	});
@@ -261,7 +261,7 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
 	const [amountSaved] = await client.readContract({
-		abi: SavingsABI,
+		abi: SavingsV2ABI,
 		address: ADDR.savingsGateway,
 		functionName: 'savings',
 		args: [account],

@@ -1,7 +1,7 @@
 import { ponder } from 'ponder:registry';
 import { Address, getAddress, zeroAddress, decodeEventLog } from 'viem';
 import { ADDR } from '../ponder.config';
-import { MintingHubGatewayABI } from '@deuro/eurocoin';
+import { MintingHubGatewayV2ABI } from '@deuro/eurocoin';
 import {
 	deps,
 	activeUser,
@@ -188,7 +188,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 				.filter((log) => log.address.toLowerCase() === ADDR.mintingHubGateway.toLowerCase())
 				.map(({ data, topics }) =>
 					decodeEventLog({
-						abi: MintingHubGatewayABI,
+						abi: MintingHubGatewayV2ABI,
 						data: data as `0x${string}`,
 						topics: topics as [`0x${string}`, ...`0x${string}`[]],
 					})

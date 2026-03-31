@@ -1,7 +1,7 @@
 import { ponder } from 'ponder:registry';
 import { Address, decodeFunctionData, getAddress, RpcTransaction, zeroAddress } from 'viem';
 import { ADDR } from '../ponder.config';
-import { FrontendGatewayABI } from '@deuro/eurocoin';
+import { FrontendGatewayV2ABI } from '@deuro/eurocoin';
 import { trade, votingPower, tradeChart, activeUser, ecosystem, deps, delegation } from '../ponder.schema';
 
 ponder.on('Equity:Trade', async ({ event, context }) => {
@@ -22,7 +22,7 @@ ponder.on('Equity:Trade', async ({ event, context }) => {
 		})) as RpcTransaction;
 
 		const decoded = decodeFunctionData({
-			abi: FrontendGatewayABI,
+			abi: FrontendGatewayV2ABI,
 			data: txRaw.input,
 		});
 
