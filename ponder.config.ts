@@ -7,10 +7,10 @@ import {
 	EquityABI,
 	DecentralizedEUROABI,
 	MintingHubV2ABI,
-	PositionRollerABI,
+	PositionRollerV2ABI,
 	PositionV2ABI,
-	SavingsABI,
-	FrontendGatewayABI,
+	SavingsV2ABI,
+	FrontendGatewayV2ABI,
 } from '@deuro/eurocoin';
 
 // mainnet (default) or polygon
@@ -84,20 +84,20 @@ export default createConfig({
 		Savings: {
 			// V2
 			chain: chain.name,
-			abi: SavingsABI,
+			abi: SavingsV2ABI,
 			address: ADDR.savingsGateway as Address,
 			startBlock: config.startMintingHubV2,
 		},
 		Roller: {
 			// V2
 			chain: chain.name,
-			abi: PositionRollerABI,
-			address: ADDR.roller as Address,
+			abi: PositionRollerV2ABI,
+			address: ADDR.rollerV2 as Address,
 			startBlock: config.startMintingHubV2,
 		},
 		FrontendGateway: {
 			chain: chain.name,
-			abi: FrontendGatewayABI,
+			abi: FrontendGatewayV2ABI,
 			address: ADDR.frontendGateway as Address,
 			startBlock: config.startMintingHubV2,
 		},
