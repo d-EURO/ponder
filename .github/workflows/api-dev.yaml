@@ -7,17 +7,14 @@ on:
 
 env:
   DOCKER_TAGS: dfxswiss/deuro-ponder:beta
-  AZURE_RESOURCE_GROUP: rg-dfx-api-dev
-  AZURE_CONTAINER_APP: ca-dfx-dep-dev
-  DEPLOY_INFO: ${{ github.ref_name }}-${{ github.sha }}
+  DEPLOY_HOST: ssh-dfxdev.dfxserve.com
+  DEPLOY_USER: dfxdev
+  DEPLOY_SERVICE: deuro-ponder
 
 jobs:
   build-and-deploy:
-    name: Build, test and deploy to DEV
+    name: Build and deploy to DEV
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,35 +41,21 @@ jobs:
           build-args: |
             COMMIT_HASH=${{ steps.sha.outputs.short }}
 
-      - name: Log in to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.DFX_DEV_CREDENTIALS }}
-
-      - name: Update Azure Container App
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            CURRENT_REVISION=$(az containerapp revision list \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --name ${{ env.AZURE_CONTAINER_APP }} \
-              --query "[?properties.active].name" \
-              --output tsv | head -1)
-
-            echo "CURRENT_REVISION=$CURRENT_REVISION" >> $GITHUB_ENV
-
-            az containerapp update \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --name ${{ env.AZURE_CONTAINER_APP }} \
-              --image ${{ env.DOCKER_TAGS }} \
-              --set-env-vars DEPLOY_INFO=${{ env.DEPLOY_INFO }}
-
-            az containerapp revision deactivate \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --name ${{ env.AZURE_CONTAINER_APP }} \
-              --revision $CURRENT_REVISION
-
-      - name: Logout from Azure
+      - name: Install cloudflared
         run: |
-          az logout
-        if: always()
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+          chmod +x /usr/local/bin/cloudflared
+
+      - name: Deploy to dfxdev
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DFXDEV_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.DFXDEV_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key \
+            -o ProxyCommand="cloudflared access ssh --hostname ${{ env.DEPLOY_HOST }}" \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            "${{ env.DEPLOY_SERVICE }}"
