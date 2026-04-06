@@ -1,4 +1,4 @@
-import { createConfig, factory, rateLimit } from 'ponder';
+import { createConfig, factory } from 'ponder';
 import { mainnet, polygon } from 'viem/chains';
 import { Address, http } from 'viem';
 import { AbiEvent } from 'abitype';
@@ -44,7 +44,8 @@ export default createConfig({
 	chains: {
 		[chain.name]: {
 			id: Id,
-			rpc: rateLimit(http(config.rpc), { requestsPerSecond: config.maxRequestsPerSecond }),
+			rpc: http(config.rpc),
+			maxRequestsPerSecond: config.maxRequestsPerSecond,
 			pollingInterval: config.pollingInterval,
 		},
 	},
