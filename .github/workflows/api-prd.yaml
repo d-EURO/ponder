@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_TAGS: dfxswiss/deuro-ponder:latest
+  DOCKER_TAGS: deurocom/ponder:latest
   DEPLOY_SERVICE: deuro-ponder
 
 jobs:
