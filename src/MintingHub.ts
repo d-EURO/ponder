@@ -1,10 +1,19 @@
 import { ponder } from 'ponder:registry';
 import { getAddress } from 'viem';
 import { PositionV2ABI as PositionABI, ERC20ABI } from '@deuro/eurocoin';
-import { positionV2, challengeV2, challengeBidV2, activeUser, ecosystem } from '../ponder.schema';
+import {
+	positionV2,
+	challengeV2,
+	challengeBidV2,
+	activeUser,
+	ecosystem,
+	forcedSale,
+	positionDeniedByGovernance,
+	mintingHubRateProposed,
+	mintingHubRateChanged,
+} from '../ponder.schema';
 
-// event PositionOpened(address indexed owner, address indexed position, address original, address collateral);
-ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
+ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 	const { client, db } = context;
 
 	const { owner, position, original, collateral } = event.args;
@@ -213,6 +222,7 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		principal,
 		virtualPrice,
 		actualVirtualPrice,
+		mintingHubAddress: getAddress(event.log.address),
 	});
 
 	await db
@@ -226,13 +236,12 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
-ponder.on('MintingHubV2:ChallengeStarted', async ({ event, context }) => {
+ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 	const { client, db } = context;
-	const { MintingHubV2 } = context.contracts;
 
 	const challenges = await client.readContract({
-		abi: MintingHubV2.abi,
-		address: MintingHubV2.address,
+		abi: context.contracts.MintingHub.abi,
+		address: event.log.address,
 		functionName: 'challenges',
 		args: [event.args.number],
 	});
@@ -251,6 +260,7 @@ ponder.on('MintingHubV2:ChallengeStarted', async ({ event, context }) => {
 
 	await db.insert(challengeV2).values({
 		id: getChallengeId(event.args.position, event.args.number),
+		txHash: event.transaction.hash,
 		position: getAddress(event.args.position),
 		number: event.args.number,
 		challenger: getAddress(event.args.challenger),
@@ -263,6 +273,7 @@ ponder.on('MintingHubV2:ChallengeStarted', async ({ event, context }) => {
 		filledSize: 0n,
 		acquiredCollateral: 0n,
 		status: 'Active',
+		mintingHubAddress: getAddress(event.log.address),
 	});
 
 	await db
@@ -276,14 +287,12 @@ ponder.on('MintingHubV2:ChallengeStarted', async ({ event, context }) => {
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
-// event ChallengeAverted(address indexed position, uint256 number, uint256 size);
-ponder.on('MintingHubV2:ChallengeAverted', async ({ event, context }) => {
+ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 	const { client, db } = context;
-	const { MintingHubV2 } = context.contracts;
 
 	const challenges = await client.readContract({
-		abi: MintingHubV2.abi,
-		address: MintingHubV2.address,
+		abi: context.contracts.MintingHub.abi,
+		address: event.log.address,
 		functionName: 'challenges',
 		args: [event.args.number],
 	});
@@ -313,6 +322,7 @@ ponder.on('MintingHubV2:ChallengeAverted', async ({ event, context }) => {
 
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
+		txHash: event.transaction.hash,
 		position: getAddress(event.args.position),
 		number: event.args.number,
 		numberBid: challenge.bids,
@@ -324,6 +334,7 @@ ponder.on('MintingHubV2:ChallengeAverted', async ({ event, context }) => {
 		filledSize: event.args.size,
 		acquiredCollateral: 0n,
 		challengeSize: challenge.size,
+		mintingHubAddress: getAddress(event.log.address),
 	});
 
 	await db
@@ -347,13 +358,12 @@ ponder.on('MintingHubV2:ChallengeAverted', async ({ event, context }) => {
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
-ponder.on('MintingHubV2:ChallengeSucceeded', async ({ event, context }) => {
+ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 	const { client, db } = context;
-	const { MintingHubV2 } = context.contracts;
 
 	const challenges = await client.readContract({
-		abi: MintingHubV2.abi,
-		address: MintingHubV2.address,
+		abi: context.contracts.MintingHub.abi,
+		address: event.log.address,
 		functionName: 'challenges',
 		args: [event.args.number],
 	});
@@ -377,6 +387,7 @@ ponder.on('MintingHubV2:ChallengeSucceeded', async ({ event, context }) => {
 
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
+		txHash: event.transaction.hash,
 		position: getAddress(event.args.position),
 		number: event.args.number,
 		numberBid: challenge.bids,
@@ -388,6 +399,7 @@ ponder.on('MintingHubV2:ChallengeSucceeded', async ({ event, context }) => {
 		filledSize: event.args.challengeSize,
 		acquiredCollateral: event.args.acquiredCollateral,
 		challengeSize: challenge.size,
+		mintingHubAddress: getAddress(event.log.address),
 	});
 
 	await db
@@ -410,6 +422,60 @@ ponder.on('MintingHubV2:ChallengeSucceeded', async ({ event, context }) => {
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
+});
+
+ponder.on('MintingHub:ForcedSale', async ({ event, context }) => {
+	const { db } = context;
+	await db.insert(forcedSale).values({
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		position: getAddress(event.args.pos),
+		amount: event.args.amount,
+		priceE36MinusDecimals: event.args.priceE36MinusDecimals,
+		blockheight: event.block.number,
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
+	});
+});
+
+ponder.on('MintingHub:PositionDeniedByGovernance', async ({ event, context }) => {
+	const { db } = context;
+	await db.insert(positionDeniedByGovernance).values({
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		position: getAddress(event.args.position),
+		denier: getAddress(event.args.denier),
+		message: event.args.message,
+		blockheight: event.block.number,
+		timestamp: event.block.timestamp,
+		txHash: event.transaction.hash,
+	});
+});
+
+ponder.on('MintingHub:RateProposed', async ({ event, context }) => {
+	const { db } = context;
+	const { who, nextChange, nextRate } = event.args;
+
+	await db.insert(mintingHubRateProposed).values({
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		txHash: event.transaction.hash,
+		proposer: getAddress(who),
+		nextRate: nextRate,
+		nextChange: nextChange,
+	});
+});
+
+ponder.on('MintingHub:RateChanged', async ({ event, context }) => {
+	const { db } = context;
+	const { newRate } = event.args;
+
+	await db.insert(mintingHubRateChanged).values({
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		created: event.block.timestamp,
+		blockheight: event.block.number,
+		txHash: event.transaction.hash,
+		approvedRate: newRate,
+	});
 });
 
 const getChallengeId = (position: string, number: bigint) => {

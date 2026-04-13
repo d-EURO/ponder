@@ -92,6 +92,7 @@ export const savingsRateProposed = onchainTable('savings_rate_proposed', (t) => 
 	proposer: t.text().notNull(),
 	nextRate: t.integer().notNull(),
 	nextChange: t.integer().notNull(),
+	source: t.text().notNull(),
 }));
 
 export const savingsRateChanged = onchainTable('savings_rate_changed', (t) => ({
@@ -100,6 +101,7 @@ export const savingsRateChanged = onchainTable('savings_rate_changed', (t) => ({
 	blockheight: t.bigint().notNull(),
 	txHash: t.text().notNull(),
 	approvedRate: t.integer().notNull(),
+	source: t.text().notNull(),
 }));
 
 export const savingsSaved = onchainTable('savings_saved', (t) => ({
@@ -133,6 +135,7 @@ export const savingsInterest = onchainTable('savings_interest', (t) => ({
 	rate: t.integer().notNull(),
 	total: t.bigint().notNull(),
 	balance: t.bigint().notNull(),
+	compounded: t.boolean(),
 }));
 
 export const savingsInterestMapping = onchainTable('savings_interest_mapping', (t) => ({
@@ -231,6 +234,7 @@ export const positionV2 = onchainTable('position_v2', (t) => ({
 	principal: t.bigint().notNull(),
 	virtualPrice: t.bigint().notNull(),
 	actualVirtualPrice: t.bigint().notNull(),
+	mintingHubAddress: t.text().notNull(),
 }));
 
 export const mintingUpdateV2 = onchainTable('minting_update_v2', (t) => ({
@@ -257,10 +261,13 @@ export const mintingUpdateV2 = onchainTable('minting_update_v2', (t) => ({
 	feeTimeframe: t.integer().notNull(),
 	feePPM: t.integer().notNull(),
 	feePaid: t.bigint().notNull(),
+	cooldown: t.bigint().notNull(),
+	mintingHubAddress: t.text().notNull(),
 }));
 
 export const challengeV2 = onchainTable('challenge_v2', (t) => ({
 	id: t.text().primaryKey(),
+	txHash: t.text().notNull(),
 	position: t.text().notNull(),
 	number: t.bigint().notNull(),
 	challenger: t.text().notNull(),
@@ -273,10 +280,12 @@ export const challengeV2 = onchainTable('challenge_v2', (t) => ({
 	filledSize: t.bigint().notNull(),
 	acquiredCollateral: t.bigint().notNull(),
 	status: t.text().notNull(),
+	mintingHubAddress: t.text().notNull(),
 }));
 
 export const challengeBidV2 = onchainTable('challenge_bid_v2', (t) => ({
 	id: t.text().primaryKey(),
+	txHash: t.text().notNull(),
 	position: t.text().notNull(),
 	number: t.bigint().notNull(),
 	numberBid: t.bigint().notNull(),
@@ -288,6 +297,7 @@ export const challengeBidV2 = onchainTable('challenge_bid_v2', (t) => ({
 	filledSize: t.bigint().notNull(),
 	acquiredCollateral: t.bigint().notNull(),
 	challengeSize: t.bigint().notNull(),
+	mintingHubAddress: t.text().notNull(),
 }));
 
 export const positionMint = onchainTable('position_mint', (t) => ({
@@ -295,6 +305,86 @@ export const positionMint = onchainTable('position_mint', (t) => ({
 	positionAddress: t.text(),
 	to: t.text().notNull(),
 	value: t.bigint().notNull(),
+	blockheight: t.bigint().notNull(),
+	timestamp: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+	mintingHubAddress: t.text().notNull(),
+}));
+
+// -------------------------------------------------------------------------
+// MINTINGHUB LEADRATE (V3)
+// -------------------------------------------------------------------------
+export const mintingHubRateProposed = onchainTable('minting_hub_rate_proposed', (t) => ({
+	id: t.text().primaryKey(),
+	created: t.bigint().notNull(),
+	blockheight: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+	proposer: t.text().notNull(),
+	nextRate: t.integer().notNull(),
+	nextChange: t.integer().notNull(),
+}));
+
+export const mintingHubRateChanged = onchainTable('minting_hub_rate_changed', (t) => ({
+	id: t.text().primaryKey(),
+	created: t.bigint().notNull(),
+	blockheight: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+	approvedRate: t.integer().notNull(),
+}));
+
+// -------------------------------------------------------------------------
+// MINTINGHUB GOVERNANCE EVENTS (V3)
+// -------------------------------------------------------------------------
+export const forcedSale = onchainTable('forced_sale', (t) => ({
+	id: t.text().primaryKey(),
+	position: t.text().notNull(),
+	amount: t.bigint().notNull(),
+	priceE36MinusDecimals: t.bigint().notNull(),
+	blockheight: t.bigint().notNull(),
+	timestamp: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+}));
+
+export const positionDeniedByGovernance = onchainTable('position_denied_by_governance', (t) => ({
+	id: t.text().primaryKey(),
+	position: t.text().notNull(),
+	denier: t.text().notNull(),
+	message: t.text().notNull(),
+	blockheight: t.bigint().notNull(),
+	timestamp: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+}));
+
+// -------------------------------------------------------------------------
+// SAVINGS VAULT (V2 + V3)
+// -------------------------------------------------------------------------
+export const savingsVaultDeposit = onchainTable('savings_vault_deposit', (t) => ({
+	id: t.text().primaryKey(),
+	sender: t.text().notNull(),
+	owner: t.text().notNull(),
+	assets: t.bigint().notNull(),
+	shares: t.bigint().notNull(),
+	blockheight: t.bigint().notNull(),
+	timestamp: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+}));
+
+export const savingsVaultWithdraw = onchainTable('savings_vault_withdraw', (t) => ({
+	id: t.text().primaryKey(),
+	sender: t.text().notNull(),
+	receiver: t.text().notNull(),
+	owner: t.text().notNull(),
+	assets: t.bigint().notNull(),
+	shares: t.bigint().notNull(),
+	blockheight: t.bigint().notNull(),
+	timestamp: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+}));
+
+export const savingsVaultInterestClaimed = onchainTable('savings_vault_interest_claimed', (t) => ({
+	id: t.text().primaryKey(),
+	interest: t.bigint().notNull(),
+	totalClaimed: t.bigint().notNull(),
 	blockheight: t.bigint().notNull(),
 	timestamp: t.bigint().notNull(),
 	txHash: t.text().notNull(),

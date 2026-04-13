@@ -1,7 +1,8 @@
 import { ponder } from 'ponder:registry';
 import { ERC20ABI, SavingsV2ABI, SavingsGatewayV2ABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
-import { Address, decodeFunctionData, getAddress } from 'viem';
+import { Address, decodeFunctionData, getAddress, zeroAddress } from 'viem';
+import { readCombinedAmountSaved } from './utils/savings';
 import {
 	savingsRateProposed,
 	savingsRateChanged,
@@ -17,7 +18,7 @@ import {
 	ecosystem,
 } from '../ponder.schema';
 
-ponder.on('Savings:RateProposed', async ({ event, context }) => {
+ponder.on('SavingsV2:RateProposed', async ({ event, context }) => {
 	const { db } = context;
 	const { who, nextChange, nextRate } = event.args;
 
@@ -29,10 +30,11 @@ ponder.on('Savings:RateProposed', async ({ event, context }) => {
 		proposer: getAddress(who),
 		nextRate: nextRate,
 		nextChange: nextChange,
+		source: 'v2',
 	});
 });
 
-ponder.on('Savings:RateChanged', async ({ event, context }) => {
+ponder.on('SavingsV2:RateChanged', async ({ event, context }) => {
 	const { db } = context;
 	const { newRate } = event.args;
 
@@ -42,10 +44,11 @@ ponder.on('Savings:RateChanged', async ({ event, context }) => {
 		blockheight: event.block.number,
 		txHash: event.transaction.hash,
 		approvedRate: newRate,
+		source: 'v2',
 	});
 });
 
-ponder.on('Savings:Saved', async ({ event, context }) => {
+ponder.on('SavingsV2:Saved', async ({ event, context }) => {
 	const { client, db } = context;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
@@ -105,12 +108,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		.values({ id: 'Savings:TotalSaved', value: '', amount: amount })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
-	const [amountSaved] = await client.readContract({
-		abi: SavingsV2ABI,
-		address: ADDR.savingsGateway,
-		functionName: 'savings',
-		args: [account],
-	});
+	const amountSaved = await readCombinedAmountSaved(client, account, event.block.number);
 
 	const existingUser = await db.find(savingsUserLeaderboard, { id: account });
 
@@ -120,22 +118,32 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		.onConflictDoUpdate(() => ({ amountSaved }));
 
 	if (!existingUser) {
-		const currentStats = await db.find(savingsStats, { id: 'global' });
 		await db
 			.insert(savingsStats)
 			.values({ id: 'global', totalUsers: 1, lastUpdated: event.block.timestamp })
-			.onConflictDoUpdate(() => ({
-				totalUsers: (currentStats?.totalUsers || 0) + 1,
+			.onConflictDoUpdate((row) => ({
+				totalUsers: row.totalUsers + 1,
 				lastUpdated: event.block.timestamp,
 			}));
 	}
 
-	const totalSaved = await context.client.readContract({
-		abi: ERC20ABI,
-		address: ADDR.decentralizedEURO,
-		functionName: 'balanceOf',
-		args: [ADDR.savingsGateway],
-	});
+	const [v2Balance, v3Balance] = await Promise.all([
+		context.client.readContract({
+			abi: ERC20ABI,
+			address: ADDR.decentralizedEURO,
+			functionName: 'balanceOf',
+			args: [ADDR.savingsGateway],
+		}),
+		ADDR.savings && ADDR.savings !== zeroAddress
+			? context.client.readContract({
+					abi: ERC20ABI,
+					address: ADDR.decentralizedEURO,
+					functionName: 'balanceOf',
+					args: [ADDR.savings],
+				})
+			: Promise.resolve(0n),
+	]);
+	const totalSaved = v2Balance + v3Balance;
 
 	const startTime = (event.block.timestamp / 86400n) * 86400n;
 	await db
@@ -144,7 +152,7 @@ ponder.on('Savings:Saved', async ({ event, context }) => {
 		.onConflictDoUpdate(() => ({ total: totalSaved }));
 });
 
-ponder.on('Savings:InterestCollected', async ({ event, context }) => {
+ponder.on('SavingsV2:InterestCollected', async ({ event, context }) => {
 	const { client, db } = context;
 	const { interest } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
@@ -194,12 +202,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 		.values({ id: 'Savings:TotalInterestCollected', value: '', amount: interest })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + interest }));
 
-	const [amountSaved] = await client.readContract({
-		abi: SavingsV2ABI,
-		address: ADDR.savingsGateway,
-		functionName: 'savings',
-		args: [account],
-	});
+	const amountSaved = await readCombinedAmountSaved(client, account, event.block.number);
 
 	await db
 		.insert(savingsUserLeaderboard)
@@ -210,7 +213,7 @@ ponder.on('Savings:InterestCollected', async ({ event, context }) => {
 		}));
 });
 
-ponder.on('Savings:Withdrawn', async ({ event, context }) => {
+ponder.on('SavingsV2:Withdrawn', async ({ event, context }) => {
 	const { client, db } = context;
 	const { amount } = event.args;
 	const account: Address = event.args.account.toLowerCase() as Address;
@@ -260,24 +263,30 @@ ponder.on('Savings:Withdrawn', async ({ event, context }) => {
 		.values({ id: 'Savings:TotalWithdrawn', value: '', amount: amount })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
-	const [amountSaved] = await client.readContract({
-		abi: SavingsV2ABI,
-		address: ADDR.savingsGateway,
-		functionName: 'savings',
-		args: [account],
-	});
+	const amountSaved = await readCombinedAmountSaved(client, account, event.block.number);
 
 	await db
 		.insert(savingsUserLeaderboard)
 		.values({ id: account, amountSaved, interestReceived: 0n })
 		.onConflictDoUpdate(() => ({ amountSaved }));
 
-	const totalSaved = await context.client.readContract({
-		abi: ERC20ABI,
-		address: ADDR.decentralizedEURO,
-		functionName: 'balanceOf',
-		args: [ADDR.savingsGateway],
-	});
+	const [v2Balance, v3Balance] = await Promise.all([
+		context.client.readContract({
+			abi: ERC20ABI,
+			address: ADDR.decentralizedEURO,
+			functionName: 'balanceOf',
+			args: [ADDR.savingsGateway],
+		}),
+		ADDR.savings && ADDR.savings !== zeroAddress
+			? context.client.readContract({
+					abi: ERC20ABI,
+					address: ADDR.decentralizedEURO,
+					functionName: 'balanceOf',
+					args: [ADDR.savings],
+				})
+			: Promise.resolve(0n),
+	]);
+	const totalSaved = v2Balance + v3Balance;
 
 	const startTime = (event.block.timestamp / 86400n) * 86400n;
 	await db

@@ -1,36 +1,50 @@
 import { ponder } from 'ponder:registry';
 import { getAddress } from 'viem';
-import { PositionV2ABI as PositionABI } from '@deuro/eurocoin';
+import { PositionV2ABI as PositionABI, SavingsV2ABI } from '@deuro/eurocoin';
+import { ADDR } from '../ponder.config';
 import { positionV2, mintingUpdateV2, ecosystem, activeUser } from '../ponder.schema';
 
-ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
+/** Resolve the Savings contract address for a position by reading its hub. */
+async function getSavingsAddress(
+	client: Parameters<Parameters<typeof ponder.on>[1]>[0]['context']['client'],
+	positionAddress: `0x${string}`
+): Promise<`0x${string}`> {
+	const hubAddress = await client.readContract({
+		abi: PositionABI,
+		address: positionAddress,
+		functionName: 'hub',
+	});
+	return hubAddress.toLowerCase() === ADDR.mintingHub?.toLowerCase() ? ADDR.savings : ADDR.savingsGateway;
+}
+
+ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 	const { client, db } = context;
-	const { Savings } = context.contracts;
 
 	const { collateral, price } = event.args;
 	const positionAddress = event.log.address;
 
-	const availableForClones = await client.readContract({
-		abi: PositionABI,
-		address: positionAddress,
-		functionName: 'availableForClones',
-	});
-
-	const availableForMinting = await client.readContract({
-		abi: PositionABI,
-		address: positionAddress,
-		functionName: 'availableForMinting',
-	});
-
-	const cooldown = await client.readContract({
-		abi: PositionABI,
-		address: positionAddress,
-		functionName: 'cooldown',
-	});
+	const [availableForClones, availableForMinting, cooldown, savingsAddress] = await Promise.all([
+		client.readContract({
+			abi: PositionABI,
+			address: positionAddress,
+			functionName: 'availableForClones',
+		}),
+		client.readContract({
+			abi: PositionABI,
+			address: positionAddress,
+			functionName: 'availableForMinting',
+		}),
+		client.readContract({
+			abi: PositionABI,
+			address: positionAddress,
+			functionName: 'cooldown',
+		}),
+		getSavingsAddress(client, positionAddress),
+	]);
 
 	const baseRatePPM = await client.readContract({
-		abi: Savings.abi,
-		address: Savings.address,
+		abi: SavingsV2ABI,
+		address: savingsAddress,
 		functionName: 'currentRatePPM',
 	});
 
@@ -80,26 +94,19 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 	const mintingCounter = ecoRow?.amount;
 	if (mintingCounter === undefined) throw new Error('MintingCounter not found.');
 
-	const idMinting = function (cnt: number | bigint) {
-		return `${positionAddress.toLowerCase()}-${cnt}`;
-	};
-
+	const idMinting = (cnt: number | bigint) => `${positionAddress.toLowerCase()}-${cnt}`;
 	const annualInterestPPM = baseRatePPM + position.riskPremiumPPM;
 
-	const getFeeTimeframe = function (): number {
-		const OneMonth = 60 * 60 * 24 * 30;
+	const getFeeTimeframe = (): number => {
+		const oneMonth = 60 * 60 * 24 * 30;
 		const secToExp = Math.floor(parseInt(position.expiration.toString()) - parseInt(event.block.timestamp.toString()));
-		return Math.max(OneMonth, secToExp);
+		return Math.max(oneMonth, secToExp);
 	};
 
-	const getFeePPM = function (): bigint {
-		const OneYear = 60 * 60 * 24 * 365;
-		const calc: number = (getFeeTimeframe() * (baseRatePPM + position.riskPremiumPPM)) / OneYear;
+	const getFeePPM = (): bigint => {
+		const oneYear = 60 * 60 * 24 * 365;
+		const calc: number = (getFeeTimeframe() * (baseRatePPM + position.riskPremiumPPM)) / oneYear;
 		return BigInt(Math.floor(calc));
-	};
-
-	const getFeePaid = function (amount: bigint): bigint {
-		return (getFeePPM() * amount) / 1_000_000n;
 	};
 
 	if (mintingCounter === 1n) {
@@ -116,25 +123,27 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			collateralDecimals: position.collateralDecimals,
 			size: collateral,
 			price: price,
-			minted: BigInt(0),
+			minted: 0n,
 			sizeAdjusted: collateral,
 			priceAdjusted: price,
-			mintedAdjusted: BigInt(0),
+			mintedAdjusted: 0n,
 			annualInterestPPM: annualInterestPPM,
 			basePremiumPPM: baseRatePPM,
 			riskPremiumPPM: position.riskPremiumPPM,
 			reserveContribution: position.reserveContribution,
 			feeTimeframe: getFeeTimeframe(),
 			feePPM: parseInt(getFeePPM().toString()),
-			feePaid: BigInt(0),
+			feePaid: 0n,
+			cooldown: BigInt(cooldown),
+			mintingHubAddress: position.mintingHubAddress,
 		});
 	} else {
 		const prev = await db.find(mintingUpdateV2, { id: idMinting(mintingCounter - 1n) });
-		if (prev == null) throw new Error(`previous minting update not found.`);
+		if (prev == null) throw new Error('previous minting update not found.');
 
 		const sizeAdjusted = collateral - prev.size;
 		const priceAdjusted = price - prev.price;
-		const mintedAdjusted = BigInt(0) - prev.minted;
+		const mintedAdjusted = 0n - prev.minted;
 
 		await db.insert(mintingUpdateV2).values({
 			id: idMinting(mintingCounter),
@@ -149,7 +158,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			collateralDecimals: position.collateralDecimals,
 			size: collateral,
 			price: price,
-			minted: BigInt(0),
+			minted: 0n,
 			sizeAdjusted,
 			priceAdjusted,
 			mintedAdjusted,
@@ -159,7 +168,9 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 			reserveContribution: position.reserveContribution,
 			feeTimeframe: getFeeTimeframe(),
 			feePPM: parseInt(getFeePPM().toString()),
-			feePaid: BigInt(0),
+			feePaid: 0n,
+			cooldown: BigInt(cooldown),
+			mintingHubAddress: position.mintingHubAddress,
 		});
 	}
 
@@ -169,7 +180,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
-ponder.on('PositionV2:PositionDenied', async ({ event, context }) => {
+ponder.on('Position:PositionDenied', async ({ event, context }) => {
 	const { client, db } = context;
 
 	const position = await db.find(positionV2, { id: event.log.address.toLowerCase() });
@@ -193,7 +204,7 @@ ponder.on('PositionV2:PositionDenied', async ({ event, context }) => {
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 });
 
-ponder.on('PositionV2:OwnershipTransferred', async ({ event, context }) => {
+ponder.on('Position:OwnershipTransferred', async ({ event, context }) => {
 	const { db } = context;
 
 	const position = await db.find(positionV2, { id: event.log.address.toLowerCase() });
