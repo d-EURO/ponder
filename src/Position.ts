@@ -1,21 +1,7 @@
 import { ponder } from 'ponder:registry';
 import { getAddress } from 'viem';
-import { PositionV2ABI as PositionABI, SavingsV2ABI } from '@deuro/eurocoin';
-import { ADDR } from '../ponder.config';
+import { PositionV2ABI as PositionABI } from '@deuro/eurocoin';
 import { positionV2, mintingUpdateV2, ecosystem, activeUser } from '../ponder.schema';
-
-/** Resolve the Savings contract address for a position by reading its hub. */
-async function getSavingsAddress(
-	client: Parameters<Parameters<typeof ponder.on>[1]>[0]['context']['client'],
-	positionAddress: `0x${string}`
-): Promise<`0x${string}`> {
-	const hubAddress = await client.readContract({
-		abi: PositionABI,
-		address: positionAddress,
-		functionName: 'hub',
-	});
-	return hubAddress.toLowerCase() === ADDR.mintingHub?.toLowerCase() ? ADDR.savings : ADDR.savingsGateway;
-}
 
 ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 	const { client, db } = context;
@@ -23,48 +9,44 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 	const { collateral, price } = event.args;
 	const positionAddress = event.log.address;
 
-	const [availableForClones, availableForMinting, cooldown, savingsAddress] = await Promise.all([
-		client.readContract({
-			abi: PositionABI,
-			address: positionAddress,
-			functionName: 'availableForClones',
-		}),
-		client.readContract({
-			abi: PositionABI,
-			address: positionAddress,
-			functionName: 'availableForMinting',
-		}),
-		client.readContract({
-			abi: PositionABI,
-			address: positionAddress,
-			functionName: 'cooldown',
-		}),
-		getSavingsAddress(client, positionAddress),
-	]);
-
-	const baseRatePPM = await client.readContract({
-		abi: SavingsV2ABI,
-		address: savingsAddress,
-		functionName: 'currentRatePPM',
-	});
-
-	const principal = await client.readContract({
-		abi: PositionABI,
-		address: positionAddress,
-		functionName: 'principal',
-	});
-
-	const virtualPrice = await client.readContract({
-		abi: PositionABI,
-		address: positionAddress,
-		functionName: 'virtualPrice',
-	});
-
-	const collateralRequirement = await client.readContract({
-		abi: PositionABI,
-		address: positionAddress,
-		functionName: 'getCollateralRequirement',
-	});
+	const [availableForClones, availableForMinting, cooldown, fixedAnnualRatePPM, principal, virtualPrice, collateralRequirement] =
+		await Promise.all([
+			client.readContract({
+				abi: PositionABI,
+				address: positionAddress,
+				functionName: 'availableForClones',
+			}),
+			client.readContract({
+				abi: PositionABI,
+				address: positionAddress,
+				functionName: 'availableForMinting',
+			}),
+			client.readContract({
+				abi: PositionABI,
+				address: positionAddress,
+				functionName: 'cooldown',
+			}),
+			client.readContract({
+				abi: PositionABI,
+				address: positionAddress,
+				functionName: 'fixedAnnualRatePPM',
+			}),
+			client.readContract({
+				abi: PositionABI,
+				address: positionAddress,
+				functionName: 'principal',
+			}),
+			client.readContract({
+				abi: PositionABI,
+				address: positionAddress,
+				functionName: 'virtualPrice',
+			}),
+			client.readContract({
+				abi: PositionABI,
+				address: positionAddress,
+				functionName: 'getCollateralRequirement',
+			}),
+		]);
 
 	const actualVirtualPrice = collateral > 0n ? (collateralRequirement * 10n ** 18n) / collateral : price;
 
@@ -81,6 +63,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		closed: collateral == 0n,
 		principal,
 		virtualPrice,
+		fixedAnnualRatePPM: Number(fixedAnnualRatePPM),
 		actualVirtualPrice,
 	});
 
@@ -95,7 +78,10 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 	if (mintingCounter === undefined) throw new Error('MintingCounter not found.');
 
 	const idMinting = (cnt: number | bigint) => `${positionAddress.toLowerCase()}-${cnt}`;
-	const annualInterestPPM = baseRatePPM + position.riskPremiumPPM;
+	const annualInterestPPM = Number(fixedAnnualRatePPM);
+	const riskPremiumPPM = Number(position.riskPremiumPPM);
+	if (annualInterestPPM < riskPremiumPPM) throw new Error('fixedAnnualRatePPM below risk premium');
+	const baseRatePPM = annualInterestPPM - riskPremiumPPM;
 
 	const getFeeTimeframe = (): number => {
 		const oneMonth = 60 * 60 * 24 * 30;
@@ -103,10 +89,9 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		return Math.max(oneMonth, secToExp);
 	};
 
-	const getFeePPM = (): bigint => {
+	const getFeePPM = (): number => {
 		const oneYear = 60 * 60 * 24 * 365;
-		const calc: number = (getFeeTimeframe() * (baseRatePPM + position.riskPremiumPPM)) / oneYear;
-		return BigInt(Math.floor(calc));
+		return Math.floor((getFeeTimeframe() * annualInterestPPM) / oneYear);
 	};
 
 	if (mintingCounter === 1n) {
@@ -127,12 +112,12 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			sizeAdjusted: collateral,
 			priceAdjusted: price,
 			mintedAdjusted: 0n,
-			annualInterestPPM: annualInterestPPM,
+			annualInterestPPM,
 			basePremiumPPM: baseRatePPM,
-			riskPremiumPPM: position.riskPremiumPPM,
+			riskPremiumPPM,
 			reserveContribution: position.reserveContribution,
 			feeTimeframe: getFeeTimeframe(),
-			feePPM: parseInt(getFeePPM().toString()),
+			feePPM: getFeePPM(),
 			feePaid: 0n,
 			cooldown: BigInt(cooldown),
 			mintingHubAddress: position.mintingHubAddress,
@@ -164,10 +149,10 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 			mintedAdjusted,
 			annualInterestPPM,
 			basePremiumPPM: baseRatePPM,
-			riskPremiumPPM: position.riskPremiumPPM,
+			riskPremiumPPM,
 			reserveContribution: position.reserveContribution,
 			feeTimeframe: getFeeTimeframe(),
-			feePPM: parseInt(getFeePPM().toString()),
+			feePPM: getFeePPM(),
 			feePaid: 0n,
 			cooldown: BigInt(cooldown),
 			mintingHubAddress: position.mintingHubAddress,

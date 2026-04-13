@@ -1,7 +1,7 @@
 import { ponder } from 'ponder:registry';
 import { ERC20ABI, SavingsV3ABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
-import { getAddress, zeroAddress } from 'viem';
+import { Address, getAddress, zeroAddress } from 'viem';
 import { readCombinedAmountSaved } from './utils/savings';
 import {
 	savingsRateProposed,
@@ -70,7 +70,7 @@ ponder.on('SavingsV3:RateChanged', async ({ event, context }) => {
 ponder.on('SavingsV3:Saved', async ({ event, context }) => {
 	const { client, db } = context;
 	const { amount } = event.args;
-	const account = getAddress(event.args.account);
+	const account: Address = event.args.account.toLowerCase() as Address;
 
 	const ratePPM = await client.readContract({
 		abi: SavingsV3ABI,
@@ -81,7 +81,7 @@ ponder.on('SavingsV3:Saved', async ({ event, context }) => {
 	await db
 		.insert(savingsSavedMapping)
 		.values({
-			id: event.args.account,
+			id: account,
 			created: event.block.timestamp,
 			blockheight: event.block.number,
 			updated: event.block.timestamp,
@@ -92,9 +92,9 @@ ponder.on('SavingsV3:Saved', async ({ event, context }) => {
 			amount: row.amount + amount,
 		}));
 
-	const latestSaved = await db.find(savingsSavedMapping, { id: event.args.account });
-	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: event.args.account });
-	const latestInterest = await db.find(savingsInterestMapping, { id: event.args.account });
+	const latestSaved = await db.find(savingsSavedMapping, { id: account });
+	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: account });
+	const latestInterest = await db.find(savingsInterestMapping, { id: account });
 
 	const balance: bigint = latestSaved
 		? latestSaved.amount - (latestWithdraw ? latestWithdraw.amount : 0n) + (latestInterest ? latestInterest.amount : 0n)
@@ -104,7 +104,7 @@ ponder.on('SavingsV3:Saved', async ({ event, context }) => {
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
 		created: event.block.timestamp,
 		blockheight: event.block.number,
-		account: event.args.account,
+		account,
 		txHash: event.transaction.hash,
 		amount,
 		rate: ratePPM,
@@ -120,11 +120,11 @@ ponder.on('SavingsV3:Saved', async ({ event, context }) => {
 
 	const amountSaved = await readCombinedAmountSaved(client, account, event.block.number);
 
-	const existingUser = await db.find(savingsUserLeaderboard, { id: event.args.account });
+	const existingUser = await db.find(savingsUserLeaderboard, { id: account });
 
 	await db
 		.insert(savingsUserLeaderboard)
-		.values({ id: event.args.account, amountSaved, interestReceived: 0n })
+		.values({ id: account, amountSaved, interestReceived: 0n })
 		.onConflictDoUpdate(() => ({ amountSaved }));
 
 	if (!existingUser) {
@@ -149,7 +149,7 @@ ponder.on('SavingsV3:Saved', async ({ event, context }) => {
 ponder.on('SavingsV3:InterestCollected', async ({ event, context }) => {
 	const { client, db } = context;
 	const { interest, compounded } = event.args;
-	const account = getAddress(event.args.account);
+	const account: Address = event.args.account.toLowerCase() as Address;
 
 	const ratePPM = await client.readContract({
 		abi: SavingsV3ABI,
@@ -160,7 +160,7 @@ ponder.on('SavingsV3:InterestCollected', async ({ event, context }) => {
 	await db
 		.insert(savingsInterestMapping)
 		.values({
-			id: event.args.account,
+			id: account,
 			created: event.block.timestamp,
 			blockheight: event.block.number,
 			updated: event.block.timestamp,
@@ -171,9 +171,9 @@ ponder.on('SavingsV3:InterestCollected', async ({ event, context }) => {
 			amount: row.amount + interest,
 		}));
 
-	const latestSaved = await db.find(savingsSavedMapping, { id: event.args.account });
-	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: event.args.account });
-	const latestInterest = await db.find(savingsInterestMapping, { id: event.args.account });
+	const latestSaved = await db.find(savingsSavedMapping, { id: account });
+	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: account });
+	const latestInterest = await db.find(savingsInterestMapping, { id: account });
 
 	const balance: bigint = latestSaved
 		? latestSaved.amount - (latestWithdraw ? latestWithdraw.amount : 0n) + (latestInterest ? latestInterest.amount : 0n)
@@ -184,7 +184,7 @@ ponder.on('SavingsV3:InterestCollected', async ({ event, context }) => {
 		created: event.block.timestamp,
 		blockheight: event.block.number,
 		txHash: event.transaction.hash,
-		account: event.args.account,
+		account,
 		amount: interest,
 		rate: ratePPM,
 		total: latestInterest ? latestInterest.amount : interest,
@@ -201,17 +201,37 @@ ponder.on('SavingsV3:InterestCollected', async ({ event, context }) => {
 
 	await db
 		.insert(savingsUserLeaderboard)
-		.values({ id: event.args.account, amountSaved, interestReceived: 0n })
+		.values({ id: account, amountSaved, interestReceived: 0n })
 		.onConflictDoUpdate((row) => ({
 			amountSaved,
 			interestReceived: row.interestReceived + interest,
 		}));
 });
 
+ponder.on('SavingsV3:InterestClaimed', async ({ event, context }) => {
+	const { db } = context;
+	const account: Address = event.args.account.toLowerCase() as Address;
+	const { amount } = event.args;
+
+	await db
+		.insert(savingsInterestMapping)
+		.values({
+			id: account,
+			created: event.block.timestamp,
+			blockheight: event.block.number,
+			updated: event.block.timestamp,
+			amount: 0n - amount,
+		})
+		.onConflictDoUpdate((row) => ({
+			updated: event.block.timestamp,
+			amount: row.amount - amount,
+		}));
+});
+
 ponder.on('SavingsV3:Withdrawn', async ({ event, context }) => {
 	const { client, db } = context;
 	const { amount } = event.args;
-	const account = getAddress(event.args.account);
+	const account: Address = event.args.account.toLowerCase() as Address;
 
 	const ratePPM = await client.readContract({
 		abi: SavingsV3ABI,
@@ -222,7 +242,7 @@ ponder.on('SavingsV3:Withdrawn', async ({ event, context }) => {
 	await db
 		.insert(savingsWithdrawnMapping)
 		.values({
-			id: event.args.account,
+			id: account,
 			created: event.block.timestamp,
 			blockheight: event.block.number,
 			updated: event.block.timestamp,
@@ -233,9 +253,9 @@ ponder.on('SavingsV3:Withdrawn', async ({ event, context }) => {
 			amount: row.amount + amount,
 		}));
 
-	const latestSaved = await db.find(savingsSavedMapping, { id: event.args.account });
-	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: event.args.account });
-	const latestInterest = await db.find(savingsInterestMapping, { id: event.args.account });
+	const latestSaved = await db.find(savingsSavedMapping, { id: account });
+	const latestWithdraw = await db.find(savingsWithdrawnMapping, { id: account });
+	const latestInterest = await db.find(savingsInterestMapping, { id: account });
 
 	const balance: bigint = latestSaved
 		? latestSaved.amount - (latestWithdraw ? latestWithdraw.amount : 0n) + (latestInterest ? latestInterest.amount : 0n)
@@ -246,7 +266,7 @@ ponder.on('SavingsV3:Withdrawn', async ({ event, context }) => {
 		created: event.block.timestamp,
 		blockheight: event.block.number,
 		txHash: event.transaction.hash,
-		account: event.args.account,
+		account,
 		amount,
 		rate: ratePPM,
 		total: latestWithdraw ? latestWithdraw.amount : amount,
@@ -262,7 +282,7 @@ ponder.on('SavingsV3:Withdrawn', async ({ event, context }) => {
 
 	await db
 		.insert(savingsUserLeaderboard)
-		.values({ id: event.args.account, amountSaved, interestReceived: 0n })
+		.values({ id: account, amountSaved, interestReceived: 0n })
 		.onConflictDoUpdate(() => ({ amountSaved }));
 
 	const totalSaved = await readTotalSavedAcrossVersions(client);
