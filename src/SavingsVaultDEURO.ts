@@ -1,5 +1,5 @@
 import { ponder } from 'ponder:registry';
-import { getAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import { savingsVaultDeposit, savingsVaultWithdraw, savingsVaultInterestClaimed } from '../ponder.schema';
 import { normalizeSavingsAccount, syncSavingsUserAggregate } from './utils/savings';
 
@@ -50,4 +50,20 @@ ponder.on('SavingsVaultDEURO:InterestClaimed', async ({ event, context }) => {
 		timestamp: event.block.timestamp,
 		txHash: event.transaction.hash,
 	});
+});
+
+// Share transfers bypass Deposit/Withdraw — resync both sides so amountSaved stays correct.
+// Mints (from=0) and burns (to=0) are already covered by Deposit/Withdraw, so skip them here.
+ponder.on('SavingsVaultDEURO:Transfer', async ({ event, context }) => {
+	const { client, db } = context;
+	const { from, to, value } = event.args;
+
+	if (value === 0n) return;
+
+	if (from !== zeroAddress) {
+		await syncSavingsUserAggregate(db, client, from, event.block.number, event.block.timestamp);
+	}
+	if (to !== zeroAddress) {
+		await syncSavingsUserAggregate(db, client, to, event.block.number, event.block.timestamp);
+	}
 });

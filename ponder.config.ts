@@ -39,6 +39,9 @@ export const CONFIG = {
 
 export const config = CONFIG[Id];
 
+// V2 savings vault deployed at this block on mainnet
+export const V2_VAULT_START_BLOCK = 23568011;
+
 // V3 contracts deployed at this block on mainnet
 export const V3_START_BLOCK = 24721024;
 

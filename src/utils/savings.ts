@@ -1,5 +1,5 @@
 import { ERC20ABI, SavingsV2ABI, SavingsV3ABI, SavingsVaultDEUROABI } from '@deuro/eurocoin';
-import { ADDR, V3_START_BLOCK } from '../../ponder.config';
+import { ADDR, V2_VAULT_START_BLOCK, V3_START_BLOCK } from '../../ponder.config';
 import { Address, zeroAddress } from 'viem';
 import { ponder } from 'ponder:registry';
 import { savingsStats, savingsTotalHistory, savingsUserLeaderboard } from '../../ponder.schema';
@@ -43,8 +43,9 @@ async function readVaultAssets(client: Client, vaultAddress: Address | undefined
 
 /** Read the combined amountSaved for an account across V2 and V3 Savings contracts. */
 export async function readCombinedAmountSaved(client: Client, account: `0x${string}`, blockNumber: bigint): Promise<bigint> {
-	const v3Available = ADDR.savings && ADDR.savings !== zeroAddress && blockNumber >= BigInt(V3_START_BLOCK);
-	const v3VaultAvailable = ADDR.savingsVaultV3 && ADDR.savingsVaultV3 !== zeroAddress && blockNumber >= BigInt(V3_START_BLOCK);
+	const v3Available = isDeployed(ADDR.savings) && blockNumber >= BigInt(V3_START_BLOCK);
+	const v2VaultAvailable = isDeployed(ADDR.savingsVaultV2) && blockNumber >= BigInt(V2_VAULT_START_BLOCK);
+	const v3VaultAvailable = isDeployed(ADDR.savingsVaultV3) && blockNumber >= BigInt(V3_START_BLOCK);
 	const [v2Result, v3Result, v2VaultAssets, v3VaultAssets] = await Promise.all([
 		client.readContract({
 			abi: SavingsV2ABI,
@@ -60,7 +61,7 @@ export async function readCombinedAmountSaved(client: Client, account: `0x${stri
 					args: [account],
 				})
 			: Promise.resolve([0n] as const),
-		readVaultAssets(client, ADDR.savingsVaultV2, account),
+		v2VaultAvailable ? readVaultAssets(client, ADDR.savingsVaultV2, account) : Promise.resolve(0n),
 		v3VaultAvailable ? readVaultAssets(client, ADDR.savingsVaultV3, account) : Promise.resolve(0n),
 	]);
 	return v2Result[0] + v3Result[0] + v2VaultAssets + v3VaultAssets;
