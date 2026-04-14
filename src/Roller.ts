@@ -17,5 +17,6 @@ ponder.on('Roller:Roll', async ({ event, context }) => {
 		target: getAddress(target),
 		collDeposit,
 		mint,
+		rollerAddress: getAddress(event.log.address),
 	});
 });

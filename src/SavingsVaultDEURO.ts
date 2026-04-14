@@ -9,6 +9,7 @@ ponder.on('SavingsVaultDEURO:Deposit', async ({ event, context }) => {
 
 	await db.insert(savingsVaultDeposit).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		vault: getAddress(event.log.address),
 		sender: getAddress(event.args.sender),
 		owner,
 		assets: event.args.assets,
@@ -27,6 +28,7 @@ ponder.on('SavingsVaultDEURO:Withdraw', async ({ event, context }) => {
 
 	await db.insert(savingsVaultWithdraw).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		vault: getAddress(event.log.address),
 		sender: getAddress(event.args.sender),
 		receiver: getAddress(event.args.receiver),
 		owner,
@@ -44,6 +46,7 @@ ponder.on('SavingsVaultDEURO:InterestClaimed', async ({ event, context }) => {
 	const { db } = context;
 	await db.insert(savingsVaultInterestClaimed).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		vault: getAddress(event.log.address),
 		interest: event.args.interest,
 		totalClaimed: event.args.totalClaimed,
 		blockheight: event.block.number,

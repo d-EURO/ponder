@@ -195,6 +195,7 @@ export const rollerRolled = onchainTable('roller_rolled', (t) => ({
 	target: t.text().notNull(),
 	collDeposit: t.bigint().notNull(),
 	mint: t.bigint().notNull(),
+	rollerAddress: t.text().notNull(),
 }));
 
 // -------------------------------------------------------------------------
@@ -360,6 +361,7 @@ export const positionDeniedByGovernance = onchainTable('position_denied_by_gover
 // -------------------------------------------------------------------------
 export const savingsVaultDeposit = onchainTable('savings_vault_deposit', (t) => ({
 	id: t.text().primaryKey(),
+	vault: t.text().notNull(),
 	sender: t.text().notNull(),
 	owner: t.text().notNull(),
 	assets: t.bigint().notNull(),
@@ -371,6 +373,7 @@ export const savingsVaultDeposit = onchainTable('savings_vault_deposit', (t) => 
 
 export const savingsVaultWithdraw = onchainTable('savings_vault_withdraw', (t) => ({
 	id: t.text().primaryKey(),
+	vault: t.text().notNull(),
 	sender: t.text().notNull(),
 	receiver: t.text().notNull(),
 	owner: t.text().notNull(),
@@ -383,6 +386,7 @@ export const savingsVaultWithdraw = onchainTable('savings_vault_withdraw', (t) =
 
 export const savingsVaultInterestClaimed = onchainTable('savings_vault_interest_claimed', (t) => ({
 	id: t.text().primaryKey(),
+	vault: t.text().notNull(),
 	interest: t.bigint().notNull(),
 	totalClaimed: t.bigint().notNull(),
 	blockheight: t.bigint().notNull(),

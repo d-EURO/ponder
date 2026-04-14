@@ -227,7 +227,7 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 
 	await db
 		.insert(ecosystem)
-		.values({ id: 'MintingHubV2:TotalPositions', value: '', amount: 1n })
+		.values({ id: 'MintingHub:TotalPositions', value: '', amount: 1n })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
 
 	await db
@@ -278,7 +278,7 @@ ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 
 	await db
 		.insert(ecosystem)
-		.values({ id: 'MintingHubV2:TotalChallenges', value: '', amount: 1n })
+		.values({ id: 'MintingHub:TotalChallenges', value: '', amount: 1n })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
 
 	await db
@@ -349,7 +349,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 
 	await db
 		.insert(ecosystem)
-		.values({ id: 'MintingHubV2:TotalAvertedBids', value: '', amount: 1n })
+		.values({ id: 'MintingHub:TotalAvertedBids', value: '', amount: 1n })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
 
 	await db
@@ -415,7 +415,7 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 
 	await db
 		.insert(ecosystem)
-		.values({ id: 'MintingHubV2:TotalSucceededBids', value: '', amount: 1n })
+		.values({ id: 'MintingHub:TotalSucceededBids', value: '', amount: 1n })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
 
 	await db
