@@ -1,8 +1,8 @@
 import { ponder } from 'ponder:registry';
-import { ERC20ABI, SavingsV2ABI, SavingsGatewayV2ABI } from '@deuro/eurocoin';
+import { SavingsV2ABI, SavingsGatewayV2ABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
-import { Address, decodeFunctionData, getAddress, zeroAddress } from 'viem';
-import { readCombinedAmountSaved } from './utils/savings';
+import { Address, decodeFunctionData, getAddress } from 'viem';
+import { isSavingsVaultAccount, normalizeSavingsAccount, syncSavingsTotalHistory, syncSavingsUserAggregate } from './utils/savings';
 import {
 	savingsRateProposed,
 	savingsRateChanged,
@@ -13,8 +13,6 @@ import {
 	savingsWithdrawn,
 	savingsWithdrawnMapping,
 	savingsUserLeaderboard,
-	savingsStats,
-	savingsTotalHistory,
 	ecosystem,
 } from '../ponder.schema';
 
@@ -51,7 +49,7 @@ ponder.on('SavingsV2:RateChanged', async ({ event, context }) => {
 ponder.on('SavingsV2:Saved', async ({ event, context }) => {
 	const { client, db } = context;
 	const { amount } = event.args;
-	const account: Address = event.args.account.toLowerCase() as Address;
+	const account: Address = normalizeSavingsAccount(event.args.account);
 
 	const ratePPM = await client.readContract({
 		abi: SavingsV2ABI,
@@ -108,54 +106,14 @@ ponder.on('SavingsV2:Saved', async ({ event, context }) => {
 		.values({ id: 'Savings:TotalSaved', value: '', amount: amount })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
-	const amountSaved = await readCombinedAmountSaved(client, account, event.block.number);
-
-	const existingUser = await db.find(savingsUserLeaderboard, { id: account });
-
-	await db
-		.insert(savingsUserLeaderboard)
-		.values({ id: account, amountSaved, interestReceived: 0n })
-		.onConflictDoUpdate(() => ({ amountSaved }));
-
-	if (!existingUser) {
-		await db
-			.insert(savingsStats)
-			.values({ id: 'global', totalUsers: 1, lastUpdated: event.block.timestamp })
-			.onConflictDoUpdate((row) => ({
-				totalUsers: row.totalUsers + 1,
-				lastUpdated: event.block.timestamp,
-			}));
-	}
-
-	const [v2Balance, v3Balance] = await Promise.all([
-		context.client.readContract({
-			abi: ERC20ABI,
-			address: ADDR.decentralizedEURO,
-			functionName: 'balanceOf',
-			args: [ADDR.savingsGateway],
-		}),
-		ADDR.savings && ADDR.savings !== zeroAddress
-			? context.client.readContract({
-					abi: ERC20ABI,
-					address: ADDR.decentralizedEURO,
-					functionName: 'balanceOf',
-					args: [ADDR.savings],
-				})
-			: Promise.resolve(0n),
-	]);
-	const totalSaved = v2Balance + v3Balance;
-
-	const startTime = (event.block.timestamp / 86400n) * 86400n;
-	await db
-		.insert(savingsTotalHistory)
-		.values({ id: startTime.toString(), time: startTime, total: totalSaved })
-		.onConflictDoUpdate(() => ({ total: totalSaved }));
+	await syncSavingsUserAggregate(db, client, account, event.block.number, event.block.timestamp);
+	await syncSavingsTotalHistory(db, client, event.block.timestamp);
 });
 
 ponder.on('SavingsV2:InterestCollected', async ({ event, context }) => {
 	const { client, db } = context;
 	const { interest } = event.args;
-	const account: Address = event.args.account.toLowerCase() as Address;
+	const account: Address = normalizeSavingsAccount(event.args.account);
 
 	const ratePPM = await client.readContract({
 		abi: SavingsV2ABI,
@@ -202,21 +160,20 @@ ponder.on('SavingsV2:InterestCollected', async ({ event, context }) => {
 		.values({ id: 'Savings:TotalInterestCollected', value: '', amount: interest })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + interest }));
 
-	const amountSaved = await readCombinedAmountSaved(client, account, event.block.number);
-
-	await db
-		.insert(savingsUserLeaderboard)
-		.values({ id: account, amountSaved, interestReceived: 0n })
-		.onConflictDoUpdate((row) => ({
-			amountSaved,
-			interestReceived: row.interestReceived + interest,
-		}));
+	await syncSavingsUserAggregate(db, client, account, event.block.number, event.block.timestamp);
+	if (!isSavingsVaultAccount(account)) {
+		await db
+			.insert(savingsUserLeaderboard)
+			.values({ id: account, amountSaved: 0n, interestReceived: 0n })
+			.onConflictDoUpdate((row) => ({ interestReceived: row.interestReceived + interest }));
+	}
+	await syncSavingsTotalHistory(db, client, event.block.timestamp);
 });
 
 ponder.on('SavingsV2:Withdrawn', async ({ event, context }) => {
 	const { client, db } = context;
 	const { amount } = event.args;
-	const account: Address = event.args.account.toLowerCase() as Address;
+	const account: Address = normalizeSavingsAccount(event.args.account);
 
 	const ratePPM = await client.readContract({
 		abi: SavingsV2ABI,
@@ -263,34 +220,6 @@ ponder.on('SavingsV2:Withdrawn', async ({ event, context }) => {
 		.values({ id: 'Savings:TotalWithdrawn', value: '', amount: amount })
 		.onConflictDoUpdate((row) => ({ amount: row.amount + amount }));
 
-	const amountSaved = await readCombinedAmountSaved(client, account, event.block.number);
-
-	await db
-		.insert(savingsUserLeaderboard)
-		.values({ id: account, amountSaved, interestReceived: 0n })
-		.onConflictDoUpdate(() => ({ amountSaved }));
-
-	const [v2Balance, v3Balance] = await Promise.all([
-		context.client.readContract({
-			abi: ERC20ABI,
-			address: ADDR.decentralizedEURO,
-			functionName: 'balanceOf',
-			args: [ADDR.savingsGateway],
-		}),
-		ADDR.savings && ADDR.savings !== zeroAddress
-			? context.client.readContract({
-					abi: ERC20ABI,
-					address: ADDR.decentralizedEURO,
-					functionName: 'balanceOf',
-					args: [ADDR.savings],
-				})
-			: Promise.resolve(0n),
-	]);
-	const totalSaved = v2Balance + v3Balance;
-
-	const startTime = (event.block.timestamp / 86400n) * 86400n;
-	await db
-		.insert(savingsTotalHistory)
-		.values({ id: startTime.toString(), time: startTime, total: totalSaved })
-		.onConflictDoUpdate(() => ({ total: totalSaved }));
+	await syncSavingsUserAggregate(db, client, account, event.block.number, event.block.timestamp);
+	await syncSavingsTotalHistory(db, client, event.block.timestamp);
 });
