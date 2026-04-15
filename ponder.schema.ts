@@ -172,6 +172,13 @@ export const savingsUserLeaderboard = onchainTable('savings_user_leaderboard', (
 	interestReceived: t.bigint().notNull(),
 }));
 
+export const savingsVaultHolder = onchainTable('savings_vault_holder', (t) => ({
+	id: t.text().primaryKey(),
+	vault: t.text().notNull(),
+	owner: t.text().notNull(),
+	shares: t.bigint().notNull(),
+}));
+
 export const savingsStats = onchainTable('savings_stats', (t) => ({
 	id: t.text().primaryKey(),
 	totalUsers: t.integer().notNull(),

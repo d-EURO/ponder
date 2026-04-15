@@ -2,7 +2,13 @@ import { ponder } from 'ponder:registry';
 import { SavingsV3ABI } from '@deuro/eurocoin';
 import { ADDR } from '../ponder.config';
 import { Address, getAddress } from 'viem';
-import { isSavingsVaultAccount, normalizeSavingsAccount, syncSavingsTotalHistory, syncSavingsUserAggregate } from './utils/savings';
+import {
+	addSavingsUserInterestReceived,
+	isSavingsVaultAccount,
+	normalizeSavingsAccount,
+	syncSavingsTotalHistory,
+	syncSavingsUserAggregate,
+} from './utils/savings';
 import {
 	savingsRateProposed,
 	savingsRateChanged,
@@ -12,7 +18,6 @@ import {
 	savingsInterestMapping,
 	savingsWithdrawn,
 	savingsWithdrawnMapping,
-	savingsUserLeaderboard,
 	ecosystem,
 } from '../ponder.schema';
 
@@ -154,10 +159,7 @@ ponder.on('SavingsV3:InterestCollected', async ({ event, context }) => {
 
 	await syncSavingsUserAggregate(db, client, account, event.block.number, event.block.timestamp);
 	if (!isSavingsVaultAccount(account)) {
-		await db
-			.insert(savingsUserLeaderboard)
-			.values({ id: account, amountSaved: 0n, interestReceived: 0n })
-			.onConflictDoUpdate((row) => ({ interestReceived: row.interestReceived + interest }));
+		await addSavingsUserInterestReceived(db, account, interest);
 	}
 	await syncSavingsTotalHistory(db, client, event.block.timestamp);
 });

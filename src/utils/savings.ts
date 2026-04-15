@@ -1,8 +1,9 @@
 import { ERC20ABI, SavingsV2ABI, SavingsV3ABI, SavingsVaultDEUROABI } from '@deuro/eurocoin';
 import { ADDR, V2_VAULT_START_BLOCK, V3_START_BLOCK } from '../../ponder.config';
+import { and, asc, eq, gt } from 'drizzle-orm';
 import { Address, zeroAddress } from 'viem';
 import { ponder } from 'ponder:registry';
-import { savingsStats, savingsTotalHistory, savingsUserLeaderboard } from '../../ponder.schema';
+import { savingsStats, savingsTotalHistory, savingsUserLeaderboard, savingsVaultHolder } from '../../ponder.schema';
 
 type Client = Parameters<Parameters<typeof ponder.on>[1]>[0]['context']['client'];
 type Db = Parameters<Parameters<typeof ponder.on>[1]>[0]['context']['db'];
@@ -19,6 +20,10 @@ export function normalizeSavingsAccount(account: `0x${string}`): Address {
 
 export function isSavingsVaultAccount(account: `0x${string}`): boolean {
 	return SAVINGS_VAULT_ADDRESSES.has(account.toLowerCase());
+}
+
+export function getSavingsVaultHolderId(vault: Address, owner: Address): string {
+	return `${vault.toLowerCase()}:${owner.toLowerCase()}`;
 }
 
 async function readVaultAssets(client: Client, vaultAddress: Address | undefined, account: `0x${string}`): Promise<bigint> {
@@ -38,6 +43,15 @@ async function readVaultAssets(client: Client, vaultAddress: Address | undefined
 		address: vaultAddress,
 		functionName: 'convertToAssets',
 		args: [shares],
+	});
+}
+
+async function readVaultShares(client: Client, vaultAddress: Address, account: `0x${string}`): Promise<bigint> {
+	return client.readContract({
+		abi: ERC20ABI,
+		address: vaultAddress,
+		functionName: 'balanceOf',
+		args: [account],
 	});
 }
 
@@ -87,6 +101,52 @@ export async function readTotalSavedAcrossVersions(client: Client): Promise<bigi
 	]);
 
 	return v2Balance + v3Balance;
+}
+
+export async function syncSavingsVaultHolder(
+	db: Db,
+	client: Client,
+	vault: Address,
+	owner: `0x${string}`
+): Promise<void> {
+	const normalizedOwner = normalizeSavingsAccount(owner);
+	const shares = await readVaultShares(client, vault, normalizedOwner);
+	const id = getSavingsVaultHolderId(vault, normalizedOwner);
+
+	if (shares === 0n) {
+		await db.delete(savingsVaultHolder, { id });
+		return;
+	}
+
+	await db
+		.insert(savingsVaultHolder)
+		.values({
+			id,
+			vault,
+			owner: normalizedOwner,
+			shares,
+		})
+		.onConflictDoUpdate(() => ({ shares }));
+}
+
+export async function getSavingsVaultHolders(db: Db, vault: Address): Promise<{ owner: Address; shares: bigint }[]> {
+	return db.sql
+		.select({
+			owner: savingsVaultHolder.owner,
+			shares: savingsVaultHolder.shares,
+		})
+		.from(savingsVaultHolder)
+		.where(and(eq(savingsVaultHolder.vault, vault), gt(savingsVaultHolder.shares, 0n)))
+		.orderBy(asc(savingsVaultHolder.owner)) as Promise<{ owner: Address; shares: bigint }[]>;
+}
+
+export async function addSavingsUserInterestReceived(db: Db, account: Address, interest: bigint): Promise<void> {
+	if (interest === 0n) return;
+
+	await db
+		.insert(savingsUserLeaderboard)
+		.values({ id: account, amountSaved: 0n, interestReceived: interest })
+		.onConflictDoUpdate((row) => ({ interestReceived: row.interestReceived + interest }));
 }
 
 export async function syncSavingsUserAggregate(

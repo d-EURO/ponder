@@ -380,10 +380,7 @@ const challengeSucceededHandler = async ({ event, context }: any) => {
 	if (!challenge) throw new Error('ChallengeV2 not found');
 
 	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
-
-	const _bid: number = parseInt(event.args.bid.toString());
-	const _size: number = parseInt(event.args.challengeSize.toString());
-	const _price: number = (_bid * 10 ** 18) / _size;
+	const price = event.args.challengeSize === 0n ? 0n : (event.args.bid * 10n ** 18n) / event.args.challengeSize;
 
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
@@ -394,8 +391,8 @@ const challengeSucceededHandler = async ({ event, context }: any) => {
 		bidder: getAddress(event.transaction.from),
 		created: event.block.timestamp,
 		bidType: 'Succeeded',
-		bid: event.args.bid * 10n ** 18n,
-		price: BigInt(_price),
+		bid: event.args.bid,
+		price,
 		filledSize: event.args.challengeSize,
 		acquiredCollateral: event.args.acquiredCollateral,
 		challengeSize: challenge.size,
