@@ -3,7 +3,7 @@ import { getAddress } from 'viem';
 import { PositionV2ABI as PositionABI } from '@deuro/eurocoin';
 import { positionV2, mintingUpdateV2, ecosystem, activeUser } from '../ponder.schema';
 
-ponder.on('Position:MintingUpdate', async ({ event, context }) => {
+const mintingUpdateHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
 	const { collateral, price } = event.args;
@@ -71,7 +71,7 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 	await db
 		.insert(ecosystem)
 		.values({ id: idEco, value: '', amount: 1n })
-		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
+		.onConflictDoUpdate((row: any) => ({ amount: row.amount + 1n }));
 
 	const ecoRow = await db.find(ecosystem, { id: idEco });
 	const mintingCounter = ecoRow?.amount;
@@ -163,9 +163,9 @@ ponder.on('Position:MintingUpdate', async ({ event, context }) => {
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
-});
+};
 
-ponder.on('Position:PositionDenied', async ({ event, context }) => {
+const positionDeniedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
 	const position = await db.find(positionV2, { id: event.log.address.toLowerCase() });
@@ -187,9 +187,9 @@ ponder.on('Position:PositionDenied', async ({ event, context }) => {
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
-});
+};
 
-ponder.on('Position:OwnershipTransferred', async ({ event, context }) => {
+const ownershipTransferredHandler = async ({ event, context }: any) => {
 	const { db } = context;
 
 	const position = await db.find(positionV2, { id: event.log.address.toLowerCase() });
@@ -203,4 +203,11 @@ ponder.on('Position:OwnershipTransferred', async ({ event, context }) => {
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
-});
+};
+
+ponder.on('PositionV2:MintingUpdate', mintingUpdateHandler);
+ponder.on('PositionV3:MintingUpdate', mintingUpdateHandler);
+ponder.on('PositionV2:PositionDenied', positionDeniedHandler);
+ponder.on('PositionV3:PositionDenied', positionDeniedHandler);
+ponder.on('PositionV2:OwnershipTransferred', ownershipTransferredHandler);
+ponder.on('PositionV3:OwnershipTransferred', ownershipTransferredHandler);

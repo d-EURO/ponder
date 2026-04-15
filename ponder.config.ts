@@ -78,23 +78,38 @@ export default createConfig({
 			address: ADDR.equity as Address,
 			startBlock: config.startStablecoin,
 		},
-		MintingHub: {
-			// V2 + V3 (V3 ABI is superset — includes RateProposed/RateChanged from Leadrate)
+		MintingHubV2: {
+			// V3 ABI is a superset of V2 — safe to use for V2 hub too
 			chain: chain.name,
 			abi: MintingHubV3ABI,
-			address: [ADDR.mintingHubGateway, ADDR.mintingHub].filter(isDeployed),
+			address: ADDR.mintingHubGateway as Address,
 			startBlock: config.startMintingHubV2,
 		},
-		Position: {
-			// Positions from V2 + V3 MintingHub factories
+		MintingHubV3: {
+			chain: chain.name,
+			abi: MintingHubV3ABI,
+			address: ADDR.mintingHub as Address,
+			startBlock: V3_START_BLOCK,
+		},
+		PositionV2: {
 			chain: chain.name,
 			abi: PositionV2ABI,
 			address: factory({
-				address: [ADDR.mintingHubGateway, ADDR.mintingHub].filter(isDeployed),
+				address: ADDR.mintingHubGateway as Address,
 				event: openPositionEvent,
 				parameter: 'position',
 			}),
 			startBlock: config.startMintingHubV2,
+		},
+		PositionV3: {
+			chain: chain.name,
+			abi: PositionV2ABI,
+			address: factory({
+				address: ADDR.mintingHub as Address,
+				event: openPositionEvent,
+				parameter: 'position',
+			}),
+			startBlock: V3_START_BLOCK,
 		},
 		SavingsV2: {
 			chain: chain.name,
@@ -108,19 +123,29 @@ export default createConfig({
 			address: ADDR.savings as Address,
 			startBlock: V3_START_BLOCK,
 		},
-		SavingsVaultDEURO: {
-			// V2 + V3 (identical event signatures)
+		SavingsVaultV2: {
 			chain: chain.name,
 			abi: SavingsVaultDEUROABI,
-			address: [ADDR.savingsVaultV2, ADDR.savingsVaultV3].filter(isDeployed),
-			startBlock: config.startMintingHubV2,
+			address: ADDR.savingsVaultV2 as Address,
+			startBlock: V2_VAULT_START_BLOCK,
 		},
-		Roller: {
-			// V2 + V3 (identical Roll event)
+		SavingsVaultV3: {
+			chain: chain.name,
+			abi: SavingsVaultDEUROABI,
+			address: ADDR.savingsVaultV3 as Address,
+			startBlock: V3_START_BLOCK,
+		},
+		RollerV2: {
 			chain: chain.name,
 			abi: PositionRollerV2ABI,
-			address: [ADDR.rollerV2, ADDR.rollerV3].filter(isDeployed),
+			address: ADDR.rollerV2 as Address,
 			startBlock: config.startMintingHubV2,
+		},
+		RollerV3: {
+			chain: chain.name,
+			abi: PositionRollerV2ABI,
+			address: ADDR.rollerV3 as Address,
+			startBlock: V3_START_BLOCK,
 		},
 		FrontendGateway: {
 			chain: chain.name,

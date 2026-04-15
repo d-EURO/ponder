@@ -3,7 +3,7 @@ import { getAddress, zeroAddress } from 'viem';
 import { savingsVaultDeposit, savingsVaultWithdraw, savingsVaultInterestClaimed } from '../ponder.schema';
 import { normalizeSavingsAccount, syncSavingsUserAggregate } from './utils/savings';
 
-ponder.on('SavingsVaultDEURO:Deposit', async ({ event, context }) => {
+const depositHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 	const owner = normalizeSavingsAccount(event.args.owner);
 
@@ -20,9 +20,9 @@ ponder.on('SavingsVaultDEURO:Deposit', async ({ event, context }) => {
 	});
 
 	await syncSavingsUserAggregate(db, client, owner, event.block.number, event.block.timestamp);
-});
+};
 
-ponder.on('SavingsVaultDEURO:Withdraw', async ({ event, context }) => {
+const withdrawHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 	const owner = normalizeSavingsAccount(event.args.owner);
 
@@ -40,9 +40,9 @@ ponder.on('SavingsVaultDEURO:Withdraw', async ({ event, context }) => {
 	});
 
 	await syncSavingsUserAggregate(db, client, owner, event.block.number, event.block.timestamp);
-});
+};
 
-ponder.on('SavingsVaultDEURO:InterestClaimed', async ({ event, context }) => {
+const interestClaimedHandler = async ({ event, context }: any) => {
 	const { db } = context;
 	await db.insert(savingsVaultInterestClaimed).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
@@ -53,20 +53,26 @@ ponder.on('SavingsVaultDEURO:InterestClaimed', async ({ event, context }) => {
 		timestamp: event.block.timestamp,
 		txHash: event.transaction.hash,
 	});
-});
+};
 
-// Share transfers bypass Deposit/Withdraw — resync both sides so amountSaved stays correct.
-// Mints (from=0) and burns (to=0) are already covered by Deposit/Withdraw, so skip them here.
-ponder.on('SavingsVaultDEURO:Transfer', async ({ event, context }) => {
+// Peer-to-peer share transfers bypass Deposit/Withdraw — resync both sides so amountSaved stays correct.
+// Mint (from=0) is already handled by Deposit; burn (to=0) by Withdraw.
+const transferHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 	const { from, to, value } = event.args;
 
 	if (value === 0n) return;
+	if (from === zeroAddress || to === zeroAddress) return;
 
-	if (from !== zeroAddress) {
-		await syncSavingsUserAggregate(db, client, from, event.block.number, event.block.timestamp);
-	}
-	if (to !== zeroAddress) {
-		await syncSavingsUserAggregate(db, client, to, event.block.number, event.block.timestamp);
-	}
-});
+	await syncSavingsUserAggregate(db, client, from, event.block.number, event.block.timestamp);
+	await syncSavingsUserAggregate(db, client, to, event.block.number, event.block.timestamp);
+};
+
+ponder.on('SavingsVaultV2:Deposit', depositHandler);
+ponder.on('SavingsVaultV3:Deposit', depositHandler);
+ponder.on('SavingsVaultV2:Withdraw', withdrawHandler);
+ponder.on('SavingsVaultV3:Withdraw', withdrawHandler);
+ponder.on('SavingsVaultV2:InterestClaimed', interestClaimedHandler);
+ponder.on('SavingsVaultV3:InterestClaimed', interestClaimedHandler);
+ponder.on('SavingsVaultV2:Transfer', transferHandler);
+ponder.on('SavingsVaultV3:Transfer', transferHandler);

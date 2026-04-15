@@ -1,6 +1,6 @@
 import { ponder } from 'ponder:registry';
 import { getAddress } from 'viem';
-import { PositionV2ABI as PositionABI, ERC20ABI } from '@deuro/eurocoin';
+import { PositionV2ABI as PositionABI, ERC20ABI, MintingHubV3ABI } from '@deuro/eurocoin';
 import {
 	positionV2,
 	challengeV2,
@@ -13,7 +13,7 @@ import {
 	mintingHubRateChanged,
 } from '../ponder.schema';
 
-ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
+const positionOpenedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
 	const { owner, position, original, collateral } = event.args;
@@ -228,19 +228,19 @@ ponder.on('MintingHub:PositionOpened', async ({ event, context }) => {
 	await db
 		.insert(ecosystem)
 		.values({ id: 'MintingHub:TotalPositions', value: '', amount: 1n })
-		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
+		.onConflictDoUpdate((row: any) => ({ amount: row.amount + 1n }));
 
 	await db
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
-});
+};
 
-ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
+const challengeStartedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
 	const challenges = await client.readContract({
-		abi: context.contracts.MintingHub.abi,
+		abi: MintingHubV3ABI,
 		address: event.log.address,
 		functionName: 'challenges',
 		args: [event.args.number],
@@ -279,19 +279,19 @@ ponder.on('MintingHub:ChallengeStarted', async ({ event, context }) => {
 	await db
 		.insert(ecosystem)
 		.values({ id: 'MintingHub:TotalChallenges', value: '', amount: 1n })
-		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
+		.onConflictDoUpdate((row: any) => ({ amount: row.amount + 1n }));
 
 	await db
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
-});
+};
 
-ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
+const challengeAvertedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
 	const challenges = await client.readContract({
-		abi: context.contracts.MintingHub.abi,
+		abi: MintingHubV3ABI,
 		address: event.log.address,
 		functionName: 'challenges',
 		args: [event.args.number],
@@ -339,7 +339,7 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 
 	await db
 		.update(challengeV2, { id: challengeId })
-		.set((row) => ({
+		.set((row: any) => ({
 			bids: row.bids + 1n,
 			filledSize: row.filledSize + event.args.size,
 			status: challenges[3] === 0n ? 'Success' : row.status,
@@ -350,19 +350,19 @@ ponder.on('MintingHub:ChallengeAverted', async ({ event, context }) => {
 	await db
 		.insert(ecosystem)
 		.values({ id: 'MintingHub:TotalAvertedBids', value: '', amount: 1n })
-		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
+		.onConflictDoUpdate((row: any) => ({ amount: row.amount + 1n }));
 
 	await db
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
-});
+};
 
-ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
+const challengeSucceededHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
 	const challenges = await client.readContract({
-		abi: context.contracts.MintingHub.abi,
+		abi: MintingHubV3ABI,
 		address: event.log.address,
 		functionName: 'challenges',
 		args: [event.args.number],
@@ -404,7 +404,7 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 
 	await db
 		.update(challengeV2, { id: challengeId })
-		.set((row) => ({
+		.set((row: any) => ({
 			bids: row.bids + 1n,
 			acquiredCollateral: row.acquiredCollateral + event.args.acquiredCollateral,
 			filledSize: row.filledSize + event.args.challengeSize,
@@ -416,15 +416,15 @@ ponder.on('MintingHub:ChallengeSucceeded', async ({ event, context }) => {
 	await db
 		.insert(ecosystem)
 		.values({ id: 'MintingHub:TotalSucceededBids', value: '', amount: 1n })
-		.onConflictDoUpdate((row) => ({ amount: row.amount + 1n }));
+		.onConflictDoUpdate((row: any) => ({ amount: row.amount + 1n }));
 
 	await db
 		.insert(activeUser)
 		.values({ id: getAddress(event.transaction.from), lastActiveTime: event.block.timestamp })
 		.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
-});
+};
 
-ponder.on('MintingHub:ForcedSale', async ({ event, context }) => {
+const forcedSaleHandler = async ({ event, context }: any) => {
 	const { db } = context;
 	await db.insert(forcedSale).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
@@ -435,9 +435,10 @@ ponder.on('MintingHub:ForcedSale', async ({ event, context }) => {
 		timestamp: event.block.timestamp,
 		txHash: event.transaction.hash,
 	});
-});
+};
 
-ponder.on('MintingHub:PositionDeniedByGovernance', async ({ event, context }) => {
+// V3-only
+ponder.on('MintingHubV3:PositionDeniedByGovernance', async ({ event, context }) => {
 	const { db } = context;
 	await db.insert(positionDeniedByGovernance).values({
 		id: `${event.transaction.hash}-${event.log.logIndex}`,
@@ -450,7 +451,8 @@ ponder.on('MintingHub:PositionDeniedByGovernance', async ({ event, context }) =>
 	});
 });
 
-ponder.on('MintingHub:RateProposed', async ({ event, context }) => {
+// V3-only (Leadrate events are inherited by MintingHub V3, not by V2 gateway)
+ponder.on('MintingHubV3:RateProposed', async ({ event, context }) => {
 	const { db } = context;
 	const { who, nextChange, nextRate } = event.args;
 
@@ -465,7 +467,7 @@ ponder.on('MintingHub:RateProposed', async ({ event, context }) => {
 	});
 });
 
-ponder.on('MintingHub:RateChanged', async ({ event, context }) => {
+ponder.on('MintingHubV3:RateChanged', async ({ event, context }) => {
 	const { db } = context;
 	const { newRate } = event.args;
 
@@ -477,6 +479,17 @@ ponder.on('MintingHub:RateChanged', async ({ event, context }) => {
 		approvedRate: newRate,
 	});
 });
+
+ponder.on('MintingHubV2:PositionOpened', positionOpenedHandler);
+ponder.on('MintingHubV3:PositionOpened', positionOpenedHandler);
+ponder.on('MintingHubV2:ChallengeStarted', challengeStartedHandler);
+ponder.on('MintingHubV3:ChallengeStarted', challengeStartedHandler);
+ponder.on('MintingHubV2:ChallengeAverted', challengeAvertedHandler);
+ponder.on('MintingHubV3:ChallengeAverted', challengeAvertedHandler);
+ponder.on('MintingHubV2:ChallengeSucceeded', challengeSucceededHandler);
+ponder.on('MintingHubV3:ChallengeSucceeded', challengeSucceededHandler);
+ponder.on('MintingHubV2:ForcedSale', forcedSaleHandler);
+ponder.on('MintingHubV3:ForcedSale', forcedSaleHandler);
 
 const getChallengeId = (position: string, number: bigint) => {
 	return `${position.toLowerCase()}-challenge-${number}`;
