@@ -1,7 +1,7 @@
 import { ponder } from 'ponder:registry';
 import { Address, getAddress, zeroAddress, decodeEventLog } from 'viem';
-import { ADDR } from '../ponder.config';
-import { MintingHubGatewayV2ABI } from '@deuro/eurocoin';
+import { ADDR, MINTING_HUB_ADDRESSES } from '../ponder.config';
+import { MintingHubV3ABI } from '@deuro/eurocoin';
 import {
 	deps,
 	activeUser,
@@ -177,18 +177,19 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 			.values({ id: getAddress(event.transaction.to as Address), lastActiveTime: event.block.timestamp })
 			.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
 
-		// Capture mints from position creation
-		if (event.transaction.to?.toLowerCase() === ADDR.mintingHubGateway.toLowerCase()) {
+		// Capture mints from position creation (V2 + V3 hubs)
+		const txTo = event.transaction.to?.toLowerCase();
+		if (txTo && MINTING_HUB_ADDRESSES.has(txTo)) {
 			const receipt = await context.client.request({
 				method: 'eth_getTransactionReceipt',
 				params: [event.transaction.hash],
 			});
 
 			const positionOpenedEvent = receipt?.logs
-				.filter((log) => log.address.toLowerCase() === ADDR.mintingHubGateway.toLowerCase())
+				.filter((log) => MINTING_HUB_ADDRESSES.has(log.address.toLowerCase()))
 				.map(({ data, topics }) =>
 					decodeEventLog({
-						abi: MintingHubGatewayV2ABI,
+						abi: MintingHubV3ABI,
 						data: data as `0x${string}`,
 						topics: topics as [`0x${string}`, ...`0x${string}`[]],
 					})
@@ -210,6 +211,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 					timestamp: event.block.timestamp,
 					blockheight: event.block.number,
 					txHash: event.transaction.hash,
+					mintingHubAddress: getAddress(txTo as `0x${string}`),
 				})
 				.onConflictDoUpdate((row) => ({
 					to: event.args.to.toLowerCase() !== ADDR.equity.toLowerCase() ? event.args.to : row.to,
@@ -230,6 +232,7 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 					timestamp: event.block.timestamp,
 					blockheight: event.block.number,
 					txHash: event.transaction.hash,
+					mintingHubAddress: openPosition.mintingHubAddress,
 				})
 				.onConflictDoUpdate((row) => ({
 					to: event.args.to.toLowerCase() !== ADDR.equity.toLowerCase() ? event.args.to : row.to,

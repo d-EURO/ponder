@@ -2,7 +2,7 @@ import { ponder } from 'ponder:registry';
 import { getAddress } from 'viem';
 import { rollerRolled } from '../ponder.schema';
 
-ponder.on('Roller:Roll', async ({ event, context }) => {
+const rollHandler = async ({ event, context }: any) => {
 	const { db } = context;
 	const { source, collWithdraw, repay, target, collDeposit, mint } = event.args;
 
@@ -17,5 +17,9 @@ ponder.on('Roller:Roll', async ({ event, context }) => {
 		target: getAddress(target),
 		collDeposit,
 		mint,
+		rollerAddress: getAddress(event.log.address),
 	});
-});
+};
+
+ponder.on('RollerV2:Roll', rollHandler);
+ponder.on('RollerV3:Roll', rollHandler);
