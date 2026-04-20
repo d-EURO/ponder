@@ -8,6 +8,7 @@ import {
 	activeUser,
 	ecosystem,
 	forcedSale,
+	postponedReturn,
 	positionDeniedByGovernance,
 	mintingHubRateProposed,
 	mintingHubRateChanged,
@@ -434,6 +435,20 @@ const forcedSaleHandler = async ({ event, context }: any) => {
 	});
 };
 
+const postponedReturnHandler = async ({ event, context }: any) => {
+	const { db } = context;
+	await db.insert(postponedReturn).values({
+		id: `${event.transaction.hash}-${event.log.logIndex}`,
+		collateral: getAddress(event.args.collateral),
+		beneficiary: getAddress(event.args.beneficiary),
+		amount: event.args.amount,
+		mintingHubAddress: getAddress(event.log.address),
+		blockheight: event.block.number,
+		created: event.block.timestamp,
+		txHash: event.transaction.hash,
+	});
+};
+
 // V3-only
 ponder.on('MintingHubV3:PositionDeniedByGovernance', async ({ event, context }) => {
 	const { db } = context;
@@ -487,6 +502,8 @@ ponder.on('MintingHubV2:ChallengeSucceeded', challengeSucceededHandler);
 ponder.on('MintingHubV3:ChallengeSucceeded', challengeSucceededHandler);
 ponder.on('MintingHubV2:ForcedSale', forcedSaleHandler);
 ponder.on('MintingHubV3:ForcedSale', forcedSaleHandler);
+ponder.on('MintingHubV2:PostponedReturn', postponedReturnHandler);
+ponder.on('MintingHubV3:PostponedReturn', postponedReturnHandler);
 
 const getChallengeId = (position: string, number: bigint) => {
 	return `${position.toLowerCase()}-challenge-${number}`;

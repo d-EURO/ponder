@@ -158,6 +158,7 @@ ponder.on('SavingsV2:InterestCollected', async ({ event, context }) => {
 		rate: ratePPM,
 		total: latestInterest ? latestInterest.amount : interest,
 		balance,
+		compounded: true,
 	});
 
 	await db
