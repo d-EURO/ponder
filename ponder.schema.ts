@@ -353,6 +353,17 @@ export const forcedSale = onchainTable('forced_sale', (t) => ({
 	txHash: t.text().notNull(),
 }));
 
+export const postponedReturn = onchainTable('postponed_return', (t) => ({
+	id: t.text().primaryKey(),
+	collateral: t.text().notNull(),
+	beneficiary: t.text().notNull(),
+	amount: t.bigint().notNull(),
+	mintingHubAddress: t.text().notNull(),
+	blockheight: t.bigint().notNull(),
+	created: t.bigint().notNull(),
+	txHash: t.text().notNull(),
+}));
+
 export const positionDeniedByGovernance = onchainTable('position_denied_by_governance', (t) => ({
 	id: t.text().primaryKey(),
 	position: t.text().notNull(),
