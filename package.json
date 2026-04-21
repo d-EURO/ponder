@@ -12,10 +12,11 @@
 		"typecheck": "tsc"
 	},
 	"dependencies": {
-		"@deuro/eurocoin": "1.0.13",
-		"@ponder/core": "^0.4.36",
+		"@deuro/eurocoin": "2.1.0",
+		"hono": "^4.10.0",
 		"pg": "^8.11.3",
-		"viem": "^2.13.8"
+		"ponder": "^0.16.6",
+		"viem": "^2.47.6"
 	},
 	"devDependencies": {
 		"@types/node": "^20.14.2",
