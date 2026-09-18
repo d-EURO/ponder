@@ -1,4 +1,7 @@
-/** Postgres rejects NUL bytes in text columns and a malicious token can return arbitrarily long names. */
+/**
+ * Postgres rejects NUL bytes in text columns, a malicious token can return arbitrarily long names, and a name that is not valid UTF-8
+ * arrives as replacement characters. Strip control and replacement characters, trim the result, and truncate it to the configured length.
+ */
 export function sanitizeText(value: unknown, maxLength = 64): string {
 	if (typeof value !== 'string') return '';
 	// eslint-disable-next-line no-control-regex

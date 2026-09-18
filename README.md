@@ -102,3 +102,12 @@ Reads on contracts the protocol does not control, such as collateral tokens, and
 `availableForMinting`, and `virtualPrice`) go through `readWithFallback()` from `src/utils/rpc.ts`, never a bare `.catch()`. Permanent
 failures fall back to safe values, while transient failures propagate. Untrusted strings and decimals go through `sanitizeText()` and
 `sanitizeDecimals()` from `src/utils/format.ts` before storage.
+
+Permanent failures are reverts or non-contract targets, return data that does not decode against the ABI, and node-side gas or
+execution-time aborts. Transient failures include connectivity problems, rate limits, provider outages, and request timeouts. Storage-only
+views on the protocol's own contracts (`price`, `cooldown`, `principal`, `getCollateralRequirement`, ...) stay unwrapped because a revert
+there is a real bug and must surface.
+
+`collateralName`, `collateralSymbol`, and `collateralDecimals` are captured once at `PositionOpened` and are not refreshed, so a token
+that is unreadable at that moment keeps `Unreadable`, `???`, and `18`. Balances, `availableForClones`, `availableForMinting`, and
+`virtualPrice` are re-read on every `MintingUpdate` and heal on their own.

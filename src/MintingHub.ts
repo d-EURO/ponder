@@ -162,10 +162,8 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'price',
 	});
 
-	/*
-	 * availableForClones() and virtualPrice() call collateral.balanceOf() internally, while availableForMinting() on a clone delegates to the
-	 * original's availableForClones(); a collateral that reverts on balanceOf() makes these position views revert too.
-	 */
+	// availableForClones() and virtualPrice() call collateral.balanceOf() internally, while availableForMinting() on a clone delegates to
+	// the original's availableForClones(); a collateral that reverts on balanceOf() makes these position views revert too.
 	const availableForClones = await readWithFallback<bigint>(
 		() =>
 			client.readContract({
@@ -377,10 +375,8 @@ const challengeAvertedHandler = async ({ event, context }: any) => {
 
 	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
 
-	const _price: number = parseInt(liqPrice.toString());
-	const _size: number = parseInt(event.args.size.toString());
-	const _amount: number = (_price / 1e18) * _size;
-
+	// Use an exact bigint product. The former floating point computation made BigInt() throw a RangeError for small non-round price/size
+	// pairs, which a position holding less than its minimum collateral makes reachable.
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
 		txHash: event.transaction.hash,
@@ -390,7 +386,7 @@ const challengeAvertedHandler = async ({ event, context }: any) => {
 		bidder: getAddress(event.transaction.from),
 		created: event.block.timestamp,
 		bidType: 'Averted',
-		bid: BigInt(_amount * 1e18),
+		bid: liqPrice * event.args.size,
 		price: liqPrice,
 		filledSize: event.args.size,
 		acquiredCollateral: 0n,
