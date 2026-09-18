@@ -13,6 +13,14 @@ import {
 	mintingHubRateProposed,
 	mintingHubRateChanged,
 } from '../ponder.schema';
+import { sanitizeDecimals, sanitizeText } from './utils/format';
+import { readWithFallback } from './utils/rpc';
+
+// Largest value a ponder bigint column (Postgres numeric(78, 0)) can hold.
+const MAX_NUMERIC_78 = 10n ** 78n - 1n;
+
+// Largest value a ponder integer column (Postgres int4) can hold.
+const MAX_INT4 = 2_147_483_647;
 
 const positionOpenedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
@@ -100,30 +108,59 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'decimals',
 	});
 
-	const collateralName = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'name',
-	});
+	// Collateral is an arbitrary untrusted ERC20, so its reads use the permanent-error handling in utils/rpc.ts.
+	const collateralName =
+		sanitizeText(
+			await readWithFallback<string>(
+				() =>
+					client.readContract({
+						abi: ERC20ABI,
+						address: collateral,
+						functionName: 'name',
+					}),
+				'Unreadable',
+				'collateral.name'
+			)
+		) || 'Unreadable';
 
-	const collateralSymbol = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'symbol',
-	});
+	const collateralSymbol =
+		sanitizeText(
+			await readWithFallback<string>(
+				() =>
+					client.readContract({
+						abi: ERC20ABI,
+						address: collateral,
+						functionName: 'symbol',
+					}),
+				'???',
+				'collateral.symbol'
+			)
+		) || '???';
 
-	const collateralDecimals = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'decimals',
-	});
+	const collateralDecimals = sanitizeDecimals(
+		await readWithFallback<number>(
+			() =>
+				client.readContract({
+					abi: ERC20ABI,
+					address: collateral,
+					functionName: 'decimals',
+				}),
+			18,
+			'collateral.decimals'
+		)
+	);
 
-	const collateralBalance = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'balanceOf',
-		args: [position],
-	});
+	const collateralBalance = await readWithFallback<bigint>(
+		() =>
+			client.readContract({
+				abi: ERC20ABI,
+				address: collateral,
+				functionName: 'balanceOf',
+				args: [position],
+			}),
+		0n,
+		'collateral.balanceOf'
+	);
 
 	const price = await client.readContract({
 		abi: PositionABI,
@@ -131,17 +168,29 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'price',
 	});
 
-	const availableForClones = await client.readContract({
-		abi: PositionABI,
-		address: position,
-		functionName: 'availableForClones',
-	});
+	// availableForClones() and virtualPrice() call collateral.balanceOf() internally. availableForMinting() does so only on a clone,
+	// where it delegates to availableForClones() of its family original (the position's own immutable `original`, not the `original`
+	// argument of this event, which is the parent); it is storage-only on a position that is its own original, so wrap it for clones only.
+	const availableForClones = await readWithFallback<bigint>(
+		() =>
+			client.readContract({
+				abi: PositionABI,
+				address: position,
+				functionName: 'availableForClones',
+			}),
+		0n,
+		'position.availableForClones'
+	);
 
-	const availableForMinting = await client.readContract({
-		abi: PositionABI,
-		address: position,
-		functionName: 'availableForMinting',
-	});
+	const readAvailableForMinting = () =>
+		client.readContract({
+			abi: PositionABI,
+			address: position,
+			functionName: 'availableForMinting',
+		});
+	const availableForMinting = isClone
+		? await readWithFallback<bigint>(readAvailableForMinting, 0n, 'position.availableForMinting')
+		: await readAvailableForMinting();
 
 	const cooldown = await client.readContract({
 		abi: PositionABI,
@@ -155,11 +204,16 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'principal',
 	});
 
-	const virtualPrice = await client.readContract({
-		abi: PositionABI,
-		address: position,
-		functionName: 'virtualPrice',
-	});
+	const virtualPrice = await readWithFallback<bigint>(
+		() =>
+			client.readContract({
+				abi: PositionABI,
+				address: position,
+				functionName: 'virtualPrice',
+			}),
+		price,
+		'position.virtualPrice'
+	);
 
 	const collateralRequirement = await client.readContract({
 		abi: PositionABI,
@@ -171,17 +225,30 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 
 	// If clone, update original position
 	if (isClone) {
-		const originalAvailableForClones = await client.readContract({
-			abi: PositionABI,
-			address: original,
-			functionName: 'availableForClones',
-		});
+		const originalAvailableForClones = await readWithFallback<bigint>(
+			() =>
+				client.readContract({
+					abi: PositionABI,
+					address: original,
+					functionName: 'availableForClones',
+				}),
+			0n,
+			'original.availableForClones'
+		);
 
-		const originalAvailableForMinting = await client.readContract({
-			abi: PositionABI,
-			address: original,
-			functionName: 'availableForMinting',
-		});
+		// The hub emits the clone's parent as `original`, and a parent may itself be a clone. availableForMinting() is storage-only only
+		// on a position that is its own original; on a clone it reaches the collateral. Read it directly only when the stored parent row
+		// is an original, so that a real bug there still surfaces.
+		const parentRow = await db.find(positionV2, { id: originalId });
+		const readOriginalAvailableForMinting = () =>
+			client.readContract({
+				abi: PositionABI,
+				address: original,
+				functionName: 'availableForMinting',
+			});
+		const originalAvailableForMinting = parentRow?.isOriginal
+			? await readOriginalAvailableForMinting()
+			: await readWithFallback<bigint>(readOriginalAvailableForMinting, 0n, 'original.availableForMinting');
 
 		await db.update(positionV2, { id: originalId }).set({
 			availableForClones: originalAvailableForClones,
@@ -189,6 +256,8 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		});
 	}
 
+	// start and expiration are uint40 on-chain and the hub sets no upper bound, while their columns are int4.
+	// Clamp them so a position that starts or expires after 2038-01-19 cannot make this insert fail.
 	await db.insert(positionV2).values({
 		id: positionId,
 		position: getAddress(position),
@@ -205,9 +274,9 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		minimumCollateral,
 		riskPremiumPPM,
 		reserveContribution,
-		start,
+		start: Math.min(Number(start), MAX_INT4),
 		cooldown: BigInt(cooldown),
-		expiration,
+		expiration: Math.min(Number(expiration), MAX_INT4),
 		challengePeriod: BigInt(challengePeriod),
 		deuroName,
 		deuroSymbol,
@@ -317,10 +386,10 @@ const challengeAvertedHandler = async ({ event, context }: any) => {
 
 	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
 
-	const _price: number = parseInt(liqPrice.toString());
-	const _size: number = parseInt(event.args.size.toString());
-	const _amount: number = (_price / 1e18) * _size;
-
+	// Use an exact bigint product instead of the former floating point computation, which made BigInt() throw a RangeError for small
+	// non-round price/size pairs. Clamp it because hostile position prices and challenge sizes are unbounded, while the database column
+	// holds only 78 digits.
+	const avertedBid = liqPrice * event.args.size;
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
 		txHash: event.transaction.hash,
@@ -330,7 +399,7 @@ const challengeAvertedHandler = async ({ event, context }: any) => {
 		bidder: getAddress(event.transaction.from),
 		created: event.block.timestamp,
 		bidType: 'Averted',
-		bid: BigInt(_amount * 1e18),
+		bid: avertedBid > MAX_NUMERIC_78 ? MAX_NUMERIC_78 : avertedBid,
 		price: liqPrice,
 		filledSize: event.args.size,
 		acquiredCollateral: 0n,

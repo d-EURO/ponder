@@ -95,3 +95,28 @@ Example:
     // mockBoss: '0x7f6c45725F521e7B5b0e3357A8Ed4152c0BBd01E',
 },
 ```
+
+## Untrusted contract reads
+
+Reads on contracts the protocol does not control, such as collateral tokens, and position views that call into them (`availableForClones`,
+`virtualPrice`, and `availableForMinting` only on a clone; on an original it is storage-only) go through `readWithFallback()` from
+`src/utils/rpc.ts`, never a bare `.catch()`. The `original` reported by `PositionOpened` is the clone's parent and may itself be a clone,
+so its `availableForMinting` is read directly only when the stored parent row is an original. Permanent failures fall back to safe values,
+while transient failures propagate. Untrusted strings and decimals go through `sanitizeText()` and `sanitizeDecimals()` from
+`src/utils/format.ts` before storage.
+
+Permanent failures are reverts or non-contract targets, return data that does not decode against the ABI, and node-side aborts and EVM
+halts: out of gas, execution time, or a halt such as an invalid opcode, invalid jump or stack error. Transient failures include
+connectivity problems, rate limits, provider outages, and request timeouts. Storage-only views on the protocol's own contracts (`price`,
+`cooldown`, `principal`, `getCollateralRequirement`, ...) stay unwrapped because a revert there is a real bug and must surface.
+
+`collateralName`, `collateralSymbol`, and `collateralDecimals` are captured once at `PositionOpened` and are not refreshed, so a token
+that is unreadable at that moment keeps `Unreadable`, `???`, and `18`. The collateral balance is taken from the `MintingUpdate` event
+itself, and `availableForClones`, `availableForMinting`, and `virtualPrice` are re-read on every `MintingUpdate`, so all four heal on their
+own.
+
+Position parameters are chosen by whoever opens the position, so values written to bounded columns are clamped to the column range: the
+averted-challenge `bid` to `numeric(78, 0)`, and `start` and `expiration` to `int4` (they are `uint40` on-chain and the hub enforces
+no upper bound). This prevents extreme parameters from making an insert fail. The clamp is lossy: a position that starts or expires
+after 2038-01-19 stores `2147483647` instead, and the `feeTimeframe` and `feePPM` values derived from the stored expiration are
+truncated accordingly. Widening both columns to `bigint` would remove the limitation but changes the GraphQL types for API consumers.

@@ -2,6 +2,7 @@ import { ponder } from 'ponder:registry';
 import { getAddress } from 'viem';
 import { PositionV2ABI as PositionABI } from '@deuro/eurocoin';
 import { positionV2, mintingUpdateV2, ecosystem, activeUser } from '../ponder.schema';
+import { readWithFallback } from './utils/rpc';
 
 const mintingUpdateHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
@@ -9,18 +10,34 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 	const { collateral, price } = event.args;
 	const positionAddress = event.log.address;
 
+	const position = await db.find(positionV2, { id: positionAddress.toLowerCase() });
+
+	if (!position) throw new Error('PositionV2 unknown in MintingUpdate');
+
+	const readAvailableForMinting = () =>
+		client.readContract({
+			abi: PositionABI,
+			address: positionAddress,
+			functionName: 'availableForMinting',
+		});
 	const [availableForClones, availableForMinting, cooldown, fixedAnnualRatePPM, principal, virtualPrice, collateralRequirement] =
 		await Promise.all([
-			client.readContract({
-				abi: PositionABI,
-				address: positionAddress,
-				functionName: 'availableForClones',
-			}),
-			client.readContract({
-				abi: PositionABI,
-				address: positionAddress,
-				functionName: 'availableForMinting',
-			}),
+			// availableForClones() and virtualPrice() call collateral.balanceOf() internally. availableForMinting() does so only on a
+			// clone, where it delegates to availableForClones() of its family original (the position's own immutable `original`); it is
+			// storage-only on a position that is its own original, so wrap it for clones only.
+			readWithFallback<bigint>(
+				() =>
+					client.readContract({
+						abi: PositionABI,
+						address: positionAddress,
+						functionName: 'availableForClones',
+					}),
+				0n,
+				'position.availableForClones'
+			),
+			position.isClone
+				? readWithFallback<bigint>(readAvailableForMinting, 0n, 'position.availableForMinting')
+				: readAvailableForMinting(),
 			client.readContract({
 				abi: PositionABI,
 				address: positionAddress,
@@ -36,11 +53,16 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 				address: positionAddress,
 				functionName: 'principal',
 			}),
-			client.readContract({
-				abi: PositionABI,
-				address: positionAddress,
-				functionName: 'virtualPrice',
-			}),
+			readWithFallback<bigint>(
+				() =>
+					client.readContract({
+						abi: PositionABI,
+						address: positionAddress,
+						functionName: 'virtualPrice',
+					}),
+				price,
+				'position.virtualPrice'
+			),
 			client.readContract({
 				abi: PositionABI,
 				address: positionAddress,
@@ -49,10 +71,6 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 		]);
 
 	const actualVirtualPrice = collateral > 0n ? (collateralRequirement * 10n ** 18n) / collateral : price;
-
-	const position = await db.find(positionV2, { id: positionAddress.toLowerCase() });
-
-	if (!position) throw new Error('PositionV2 unknown in MintingUpdate');
 
 	await db.update(positionV2, { id: positionAddress.toLowerCase() }).set({
 		collateralBalance: collateral,
