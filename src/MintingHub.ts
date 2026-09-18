@@ -254,7 +254,7 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 	}
 
 	// start and expiration are uint40 on-chain and the hub sets no upper bound, while their columns are int4.
-	// Clamp them so a position with a term beyond 2038 cannot make this insert fail.
+	// Clamp them so a position that starts or expires after 2038-01-19 cannot make this insert fail.
 	await db.insert(positionV2).values({
 		id: positionId,
 		position: getAddress(position),

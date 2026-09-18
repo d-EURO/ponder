@@ -114,5 +114,7 @@ itself, and `availableForClones`, `availableForMinting`, and `virtualPrice` are 
 own.
 
 Position parameters are chosen by whoever opens the position, so values written to bounded columns are clamped to the column range: the
-averted-challenge `bid` to `numeric(78, 0)`, and `start` and `expiration` to `int4` (they are `uint40` on-chain with no upper bound). This
-prevents extreme parameters from making an insert fail.
+averted-challenge `bid` to `numeric(78, 0)`, and `start` and `expiration` to `int4` (they are `uint40` on-chain and the hub enforces
+no upper bound). This prevents extreme parameters from making an insert fail. The clamp is lossy: a position that starts or expires
+after 2038-01-19 stores `2147483647` instead, and the `feeTimeframe` and `feePPM` values derived from the stored expiration are
+truncated accordingly. Widening both columns to `bigint` would remove the limitation but changes the GraphQL types for API consumers.
