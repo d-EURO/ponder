@@ -55,11 +55,7 @@ export function isPermanentContractError(error: unknown): boolean {
 		) {
 			return true;
 		}
-		if (
-			typeof value.code === 'number' &&
-			typeof value.message === 'string' &&
-			PERMANENT_EXECUTION_ABORT_PATTERN.test(value.message)
-		) {
+		if (typeof value.code === 'number' && typeof value.message === 'string' && PERMANENT_EXECUTION_ABORT_PATTERN.test(value.message)) {
 			return true;
 		}
 	}
