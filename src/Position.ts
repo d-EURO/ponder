@@ -23,8 +23,8 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 	const [availableForClones, availableForMinting, cooldown, fixedAnnualRatePPM, principal, virtualPrice, collateralRequirement] =
 		await Promise.all([
 			// availableForClones() and virtualPrice() call collateral.balanceOf() internally. availableForMinting() does so only on a
-			// clone, where it delegates to the original's availableForClones(); it is storage-only on an original, so wrap it for
-			// clones only.
+			// clone, where it delegates to availableForClones() of its family original (the position's own immutable `original`); it is
+			// storage-only on a position that is its own original, so wrap it for clones only.
 			readWithFallback<bigint>(
 				() =>
 					client.readContract({

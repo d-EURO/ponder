@@ -168,8 +168,9 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'price',
 	});
 
-	// availableForClones() and virtualPrice() call collateral.balanceOf() internally. availableForMinting() does so only on a
-	// clone, where it delegates to the original's availableForClones(); it is storage-only on an original, so wrap it for clones only.
+	// availableForClones() and virtualPrice() call collateral.balanceOf() internally. availableForMinting() does so only on a clone,
+	// where it delegates to availableForClones() of its family original (the position's own immutable `original`, not the `original`
+	// argument of this event, which is the parent); it is storage-only on a position that is its own original, so wrap it for clones only.
 	const availableForClones = await readWithFallback<bigint>(
 		() =>
 			client.readContract({
