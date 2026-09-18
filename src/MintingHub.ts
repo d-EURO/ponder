@@ -19,6 +19,9 @@ import { readWithFallback } from './utils/rpc';
 // Largest value a ponder bigint column (Postgres numeric(78, 0)) can hold.
 const MAX_NUMERIC_78 = 10n ** 78n - 1n;
 
+// Largest value a ponder integer column (Postgres int4) can hold.
+const MAX_INT4 = 2_147_483_647;
+
 const positionOpenedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
@@ -250,6 +253,8 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		});
 	}
 
+	// start and expiration are uint40 on-chain and the hub sets no upper bound, while their columns are int4.
+	// Clamp them so a position with a term beyond 2038 cannot make this insert fail.
 	await db.insert(positionV2).values({
 		id: positionId,
 		position: getAddress(position),
@@ -266,9 +271,9 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		minimumCollateral,
 		riskPremiumPPM,
 		reserveContribution,
-		start,
+		start: Math.min(Number(start), MAX_INT4),
 		cooldown: BigInt(cooldown),
-		expiration,
+		expiration: Math.min(Number(expiration), MAX_INT4),
 		challengePeriod: BigInt(challengePeriod),
 		deuroName,
 		deuroSymbol,

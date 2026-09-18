@@ -112,3 +112,7 @@ there is a real bug and must surface.
 that is unreadable at that moment keeps `Unreadable`, `???`, and `18`. The collateral balance is taken from the `MintingUpdate` event
 itself, and `availableForClones`, `availableForMinting`, and `virtualPrice` are re-read on every `MintingUpdate`, so all four heal on their
 own.
+
+Position parameters are chosen by whoever opens the position, so values written to bounded columns are clamped to the column range: the
+averted-challenge `bid` to `numeric(78, 0)`, and `start` and `expiration` to `int4` (they are `uint40` on-chain with no upper bound). This
+prevents extreme parameters from making an insert fail.
