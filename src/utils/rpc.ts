@@ -3,18 +3,16 @@
 // request timeouts) must propagate because Ponder's RPC layer already retries them with backoff; using a fallback for those errors would
 // silently corrupt the database.
 
+// Encode-side errors (unknown function, malformed address) are deliberately absent: they are local programming errors and must surface.
 const PERMANENT_CONTRACT_ERROR_NAMES = new Set([
 	'ContractFunctionRevertedError', // The contract function reverted.
 	'ContractFunctionZeroDataError', // The contract function returned no data.
 	'ExecutionRevertedError', // EVM execution reverted.
 	'RawContractError', // The RPC returned a raw contract execution error.
 	'AbiErrorSignatureNotFoundError', // The returned ABI error signature is unknown.
-	'AbiFunctionNotFoundError', // The requested function is absent from the ABI.
 	'AbiDecodingZeroDataError', // ABI decoding received no data.
 	'AbiDecodingDataSizeTooSmallError', // ABI decoding received too little data.
 	'AbiDecodingDataSizeInvalidError', // ABI decoding received incorrectly sized data.
-	'InvalidAddressError', // The contract address is invalid.
-
 	'IntegerOutOfRangeError', // A decoded number, offset, or length does not fit (for example, name() returns bytes32 instead of string).
 	'PositionOutOfBoundsError', // A dynamic offset or length points outside the returned data.
 	'NegativeOffsetError', // A dynamic offset is negative.

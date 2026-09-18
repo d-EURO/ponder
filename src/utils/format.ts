@@ -10,8 +10,8 @@ export function sanitizeText(value: unknown, maxLength = 64): string {
 }
 
 /**
- * viem decodes uint8 without range checking, so a hostile token can return a value that overflows the Postgres integer column
- * collateralDecimals.
+ * viem does not range-check uint8 values that fit a JavaScript safe integer (a token returning 300 decodes as 300), so this checks the
+ * value before it reaches the Postgres integer column collateralDecimals.
  */
 export function sanitizeDecimals(value: unknown, fallback = 18): number {
 	return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 255 ? value : fallback;

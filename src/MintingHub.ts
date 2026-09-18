@@ -16,6 +16,9 @@ import {
 import { sanitizeDecimals, sanitizeText } from './utils/format';
 import { readWithFallback } from './utils/rpc';
 
+// Largest value a ponder bigint column (Postgres numeric(78, 0)) can hold.
+const MAX_NUMERIC_78 = 10n ** 78n - 1n;
+
 const positionOpenedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
 
@@ -375,8 +378,10 @@ const challengeAvertedHandler = async ({ event, context }: any) => {
 
 	const challengeBidId = getChallengeBidId(event.args.position, event.args.number, challenge.bids);
 
-	// Use an exact bigint product. The former floating point computation made BigInt() throw a RangeError for small non-round price/size
-	// pairs, which a position holding less than its minimum collateral makes reachable.
+	// Use an exact bigint product instead of the former floating point computation, which made BigInt() throw a RangeError for small
+	// non-round price/size pairs. Clamp it because hostile position prices and challenge sizes are unbounded, while the database column
+	// holds only 78 digits.
+	const avertedBid = liqPrice * event.args.size;
 	await db.insert(challengeBidV2).values({
 		id: challengeBidId,
 		txHash: event.transaction.hash,
@@ -386,7 +391,7 @@ const challengeAvertedHandler = async ({ event, context }: any) => {
 		bidder: getAddress(event.transaction.from),
 		created: event.block.timestamp,
 		bidType: 'Averted',
-		bid: liqPrice * event.args.size,
+		bid: avertedBid > MAX_NUMERIC_78 ? MAX_NUMERIC_78 : avertedBid,
 		price: liqPrice,
 		filledSize: event.args.size,
 		acquiredCollateral: 0n,

@@ -109,5 +109,6 @@ views on the protocol's own contracts (`price`, `cooldown`, `principal`, `getCol
 there is a real bug and must surface.
 
 `collateralName`, `collateralSymbol`, and `collateralDecimals` are captured once at `PositionOpened` and are not refreshed, so a token
-that is unreadable at that moment keeps `Unreadable`, `???`, and `18`. Balances, `availableForClones`, `availableForMinting`, and
-`virtualPrice` are re-read on every `MintingUpdate` and heal on their own.
+that is unreadable at that moment keeps `Unreadable`, `???`, and `18`. The collateral balance is taken from the `MintingUpdate` event
+itself, and `availableForClones`, `availableForMinting`, and `virtualPrice` are re-read on every `MintingUpdate`, so all four heal on their
+own.
