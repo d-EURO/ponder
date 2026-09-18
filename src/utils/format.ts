@@ -2,7 +2,8 @@
 export function sanitizeText(value: unknown, maxLength = 64): string {
 	if (typeof value !== 'string') return '';
 	// eslint-disable-next-line no-control-regex
-	return value.replace(/[\u0000-\u001f\u007f-\u009f\ufffd]/g, '').trim().slice(0, maxLength);
+	const cleaned = value.replace(/[\u0000-\u001f\u007f-\u009f\ufffd]/g, '').trim();
+	return cleaned.slice(0, maxLength);
 }
 
 /**
