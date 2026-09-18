@@ -1,12 +1,13 @@
 /**
  * Postgres rejects NUL bytes in text columns, a malicious token can return arbitrarily long names, and a name that is not valid UTF-8
- * arrives as replacement characters. Strip control and replacement characters, trim the result, and truncate it to the configured length.
+ * arrives as replacement characters. Strip control and replacement characters, trim the result, and truncate it to maxLength code points,
+ * so a surrogate pair is never split.
  */
 export function sanitizeText(value: unknown, maxLength = 64): string {
 	if (typeof value !== 'string') return '';
 	// eslint-disable-next-line no-control-regex
 	const cleaned = value.replace(/[\u0000-\u001f\u007f-\u009f\ufffd]/g, '').trim();
-	return cleaned.slice(0, maxLength);
+	return Array.from(cleaned).slice(0, maxLength).join('');
 }
 
 /**

@@ -1,7 +1,7 @@
 // PERMANENT contract errors may safely fall back: the contract reverted or is not a contract, the returned data does not decode against the
-// ABI, or the node aborted execution for gas or execution time. TRANSIENT RPC errors (connectivity, rate limits, provider outages, and
-// request timeouts) must propagate because Ponder's RPC layer already retries them with backoff; using a fallback for those errors would
-// silently corrupt the database.
+// ABI, or the node aborted or halted the execution (gas, execution time, or an EVM halt such as an invalid opcode). TRANSIENT RPC errors
+// (connectivity, rate limits, provider outages, and request timeouts) must propagate because Ponder's RPC layer already retries them with
+// backoff; using a fallback for those errors would silently corrupt the database.
 
 // Encode-side errors (unknown function, malformed address) are deliberately absent: they are local programming errors and must surface.
 const PERMANENT_CONTRACT_ERROR_NAMES = new Set([
@@ -26,10 +26,12 @@ const PERMANENT_CONTRACT_ERROR_NAMES = new Set([
 
 const PERMANENT_REVERT_CODES = new Set([3, -32000, -32015]);
 
-// Measured provider answers include "out of gas" (-32000), "execution aborted (timeout = 5s)" (-32000), and
-// "out of gas: gas required exceeds: 50000000" (-32003). Re-executing the same view at the same block can never succeed, and a legitimate
-// token view never comes near a node's gas cap or execution timeout.
-const PERMANENT_EXECUTION_ABORT_PATTERN = /out of gas|gas required exceeds|execution aborted/i;
+// These are deterministic EVM execution failures that are not reverts; the phrases are the go-ethereum VM error messages
+// (core/vm/errors.go) plus the "EVM error: <HaltReason>" form used by revm-based nodes. Measured provider answers include
+// "out of gas" (-32000), "execution aborted (timeout = 5s)" (-32000), "out of gas: gas required exceeds: 50000000"
+// (-32003), "invalid opcode: INVALID" (-32000), "invalid jump destination" (-32000), "stack underflow (0 <=> 1)" (-32000)
+// and "EVM error: InvalidFEOpcode" (-32003); re-executing the same view at the same block can never succeed.
+const PERMANENT_EXECUTION_HALT_PATTERN = /out of gas|gas required exceeds|execution aborted|invalid opcode|invalid jump|stack underflow|stack overflow|stack limit reached|max call depth exceeded|write protection|return data out of bounds|gas uint64 overflow|EVM error/i;
 
 /** Walks `error` and its `cause` chain, guarding against cycles. */
 function* causeChain(error: unknown): Generator<Record<string, unknown>> {
@@ -53,7 +55,7 @@ export function isPermanentContractError(error: unknown): boolean {
 		) {
 			return true;
 		}
-		if (typeof value.code === 'number' && typeof value.message === 'string' && PERMANENT_EXECUTION_ABORT_PATTERN.test(value.message)) {
+		if (typeof value.code === 'number' && typeof value.message === 'string' && PERMANENT_EXECUTION_HALT_PATTERN.test(value.message)) {
 			return true;
 		}
 	}

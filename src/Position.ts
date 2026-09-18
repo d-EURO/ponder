@@ -10,9 +10,21 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 	const { collateral, price } = event.args;
 	const positionAddress = event.log.address;
 
+	const position = await db.find(positionV2, { id: positionAddress.toLowerCase() });
+
+	if (!position) throw new Error('PositionV2 unknown in MintingUpdate');
+
+	const readAvailableForMinting = () =>
+		client.readContract({
+			abi: PositionABI,
+			address: positionAddress,
+			functionName: 'availableForMinting',
+		});
 	const [availableForClones, availableForMinting, cooldown, fixedAnnualRatePPM, principal, virtualPrice, collateralRequirement] =
 		await Promise.all([
-			// These position views can call collateral.balanceOf() internally, so permanent collateral failures use safe fallbacks.
+			// availableForClones() and virtualPrice() call collateral.balanceOf() internally. availableForMinting() does so only on a
+			// clone, where it delegates to the original's availableForClones(); it is storage-only on an original, so wrap it for
+			// clones only.
 			readWithFallback<bigint>(
 				() =>
 					client.readContract({
@@ -23,16 +35,9 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 				0n,
 				'position.availableForClones'
 			),
-			readWithFallback<bigint>(
-				() =>
-					client.readContract({
-						abi: PositionABI,
-						address: positionAddress,
-						functionName: 'availableForMinting',
-					}),
-				0n,
-				'position.availableForMinting'
-			),
+			position.isClone
+				? readWithFallback<bigint>(readAvailableForMinting, 0n, 'position.availableForMinting')
+				: readAvailableForMinting(),
 			client.readContract({
 				abi: PositionABI,
 				address: positionAddress,
@@ -66,10 +71,6 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 		]);
 
 	const actualVirtualPrice = collateral > 0n ? (collateralRequirement * 10n ** 18n) / collateral : price;
-
-	const position = await db.find(positionV2, { id: positionAddress.toLowerCase() });
-
-	if (!position) throw new Error('PositionV2 unknown in MintingUpdate');
 
 	await db.update(positionV2, { id: positionAddress.toLowerCase() }).set({
 		collateralBalance: collateral,

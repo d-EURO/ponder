@@ -168,8 +168,8 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'price',
 	});
 
-	// availableForClones() and virtualPrice() call collateral.balanceOf() internally, while availableForMinting() on a clone delegates to
-	// the original's availableForClones(); a collateral that reverts on balanceOf() makes these position views revert too.
+	// availableForClones() and virtualPrice() call collateral.balanceOf() internally. availableForMinting() does so only on a
+	// clone, where it delegates to the original's availableForClones(); it is storage-only on an original, so wrap it for clones only.
 	const availableForClones = await readWithFallback<bigint>(
 		() =>
 			client.readContract({
@@ -181,16 +181,15 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		'position.availableForClones'
 	);
 
-	const availableForMinting = await readWithFallback<bigint>(
-		() =>
-			client.readContract({
-				abi: PositionABI,
-				address: position,
-				functionName: 'availableForMinting',
-			}),
-		0n,
-		'position.availableForMinting'
-	);
+	const readAvailableForMinting = () =>
+		client.readContract({
+			abi: PositionABI,
+			address: position,
+			functionName: 'availableForMinting',
+		});
+	const availableForMinting = isClone
+		? await readWithFallback<bigint>(readAvailableForMinting, 0n, 'position.availableForMinting')
+		: await readAvailableForMinting();
 
 	const cooldown = await client.readContract({
 		abi: PositionABI,
@@ -236,16 +235,11 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 			'original.availableForClones'
 		);
 
-		const originalAvailableForMinting = await readWithFallback<bigint>(
-			() =>
-				client.readContract({
-					abi: PositionABI,
-					address: original,
-					functionName: 'availableForMinting',
-				}),
-			0n,
-			'original.availableForMinting'
-		);
+		const originalAvailableForMinting = await client.readContract({
+			abi: PositionABI,
+			address: original,
+			functionName: 'availableForMinting',
+		});
 
 		await db.update(positionV2, { id: originalId }).set({
 			availableForClones: originalAvailableForClones,
