@@ -235,11 +235,19 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 			'original.availableForClones'
 		);
 
-		const originalAvailableForMinting = await client.readContract({
-			abi: PositionABI,
-			address: original,
-			functionName: 'availableForMinting',
-		});
+		// The hub emits the clone's parent as `original`, and a parent may itself be a clone. availableForMinting() is storage-only only
+		// on a position that is its own original; on a clone it reaches the collateral. Read it directly only when the stored parent row
+		// is an original, so that a real bug there still surfaces.
+		const parentRow = await db.find(positionV2, { id: originalId });
+		const readOriginalAvailableForMinting = () =>
+			client.readContract({
+				abi: PositionABI,
+				address: original,
+				functionName: 'availableForMinting',
+			});
+		const originalAvailableForMinting = parentRow?.isOriginal
+			? await readOriginalAvailableForMinting()
+			: await readWithFallback<bigint>(readOriginalAvailableForMinting, 0n, 'original.availableForMinting');
 
 		await db.update(positionV2, { id: originalId }).set({
 			availableForClones: originalAvailableForClones,

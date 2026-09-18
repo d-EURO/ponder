@@ -26,8 +26,9 @@ const PERMANENT_CONTRACT_ERROR_NAMES = new Set([
 
 const PERMANENT_REVERT_CODES = new Set([3, -32000, -32015]);
 
-// These are deterministic EVM execution failures that are not reverts; the phrases are the go-ethereum VM error messages
-// (core/vm/errors.go) plus the "EVM error: <HaltReason>" form used by revm-based nodes. Measured provider answers include
+// These are deterministic EVM execution failures that are not reverts; the phrases come from go-ethereum VM errors (core/vm/errors.go),
+// node-side gas-cap and execution-timeout messages ("gas required exceeds", "execution aborted"), and the "EVM error: <HaltReason>"
+// form used by revm-based nodes. Measured provider answers include
 // "out of gas" (-32000), "execution aborted (timeout = 5s)" (-32000), "out of gas: gas required exceeds: 50000000"
 // (-32003), "invalid opcode: INVALID" (-32000), "invalid jump destination" (-32000), "stack underflow (0 <=> 1)" (-32000)
 // and "EVM error: InvalidFEOpcode" (-32003); re-executing the same view at the same block can never succeed.

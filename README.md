@@ -100,8 +100,10 @@ Example:
 
 Reads on contracts the protocol does not control, such as collateral tokens, and position views that call into them (`availableForClones`,
 `virtualPrice`, and `availableForMinting` only on a clone; on an original it is storage-only) go through `readWithFallback()` from
-`src/utils/rpc.ts`, never a bare `.catch()`. Permanent failures fall back to safe values, while transient failures propagate. Untrusted
-strings and decimals go through `sanitizeText()` and `sanitizeDecimals()` from `src/utils/format.ts` before storage.
+`src/utils/rpc.ts`, never a bare `.catch()`. The `original` reported by `PositionOpened` is the clone's parent and may itself be a clone,
+so its `availableForMinting` is read directly only when the stored parent row is an original. Permanent failures fall back to safe values,
+while transient failures propagate. Untrusted strings and decimals go through `sanitizeText()` and `sanitizeDecimals()` from
+`src/utils/format.ts` before storage.
 
 Permanent failures are reverts or non-contract targets, return data that does not decode against the ABI, and node-side aborts and EVM
 halts: out of gas, execution time, or a halt such as an invalid opcode, invalid jump or stack error. Transient failures include
