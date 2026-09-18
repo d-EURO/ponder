@@ -31,7 +31,8 @@ const PERMANENT_REVERT_CODES = new Set([3, -32000, -32015]);
 // "out of gas" (-32000), "execution aborted (timeout = 5s)" (-32000), "out of gas: gas required exceeds: 50000000"
 // (-32003), "invalid opcode: INVALID" (-32000), "invalid jump destination" (-32000), "stack underflow (0 <=> 1)" (-32000)
 // and "EVM error: InvalidFEOpcode" (-32003); re-executing the same view at the same block can never succeed.
-const PERMANENT_EXECUTION_HALT_PATTERN = /out of gas|gas required exceeds|execution aborted|invalid opcode|invalid jump|stack underflow|stack overflow|stack limit reached|max call depth exceeded|write protection|return data out of bounds|gas uint64 overflow|EVM error/i;
+const PERMANENT_EXECUTION_HALT_PATTERN =
+	/out of gas|gas required exceeds|execution aborted|invalid opcode|invalid jump|stack underflow|stack overflow|stack limit reached|max call depth exceeded|write protection|return data out of bounds|gas uint64 overflow|EVM error/i;
 
 /** Walks `error` and its `cause` chain, guarding against cycles. */
 function* causeChain(error: unknown): Generator<Record<string, unknown>> {
