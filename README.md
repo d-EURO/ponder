@@ -95,3 +95,10 @@ Example:
     // mockBoss: '0x7f6c45725F521e7B5b0e3357A8Ed4152c0BBd01E',
 },
 ```
+
+## Untrusted contract reads
+
+Reads on contracts the protocol does not control, such as collateral tokens, and position views that call into them (`availableForClones`,
+`availableForMinting`, and `virtualPrice`) go through `readWithFallback()` from `src/utils/rpc.ts`, never a bare `.catch()`. Permanent
+failures fall back to safe values, while transient failures propagate. Untrusted strings and decimals go through `sanitizeText()` and
+`sanitizeDecimals()` from `src/utils/format.ts` before storage.

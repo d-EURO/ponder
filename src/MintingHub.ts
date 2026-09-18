@@ -13,6 +13,8 @@ import {
 	mintingHubRateProposed,
 	mintingHubRateChanged,
 } from '../ponder.schema';
+import { sanitizeDecimals, sanitizeText } from './utils/format';
+import { readWithFallback } from './utils/rpc';
 
 const positionOpenedHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
@@ -100,30 +102,59 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'decimals',
 	});
 
-	const collateralName = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'name',
-	});
+	// Collateral is an arbitrary untrusted ERC20, so its reads use the permanent-error handling in utils/rpc.ts.
+	const collateralName =
+		sanitizeText(
+			await readWithFallback<string>(
+				() =>
+					client.readContract({
+						abi: ERC20ABI,
+						address: collateral,
+						functionName: 'name',
+					}),
+				'Unreadable',
+				'collateral.name'
+			)
+		) || 'Unreadable';
 
-	const collateralSymbol = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'symbol',
-	});
+	const collateralSymbol =
+		sanitizeText(
+			await readWithFallback<string>(
+				() =>
+					client.readContract({
+						abi: ERC20ABI,
+						address: collateral,
+						functionName: 'symbol',
+					}),
+				'???',
+				'collateral.symbol'
+			)
+		) || '???';
 
-	const collateralDecimals = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'decimals',
-	});
+	const collateralDecimals = sanitizeDecimals(
+		await readWithFallback<number>(
+			() =>
+				client.readContract({
+					abi: ERC20ABI,
+					address: collateral,
+					functionName: 'decimals',
+				}),
+			18,
+			'collateral.decimals'
+		)
+	);
 
-	const collateralBalance = await client.readContract({
-		abi: ERC20ABI,
-		address: collateral,
-		functionName: 'balanceOf',
-		args: [position],
-	});
+	const collateralBalance = await readWithFallback<bigint>(
+		() =>
+			client.readContract({
+				abi: ERC20ABI,
+				address: collateral,
+				functionName: 'balanceOf',
+				args: [position],
+			}),
+		0n,
+		'collateral.balanceOf'
+	);
 
 	const price = await client.readContract({
 		abi: PositionABI,
@@ -131,17 +162,31 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'price',
 	});
 
-	const availableForClones = await client.readContract({
-		abi: PositionABI,
-		address: position,
-		functionName: 'availableForClones',
-	});
+	/*
+	 * availableForClones() and virtualPrice() call collateral.balanceOf() internally, while availableForMinting() on a clone delegates to the
+	 * original's availableForClones(); a collateral that reverts on balanceOf() makes these position views revert too.
+	 */
+	const availableForClones = await readWithFallback<bigint>(
+		() =>
+			client.readContract({
+				abi: PositionABI,
+				address: position,
+				functionName: 'availableForClones',
+			}),
+		0n,
+		'position.availableForClones'
+	);
 
-	const availableForMinting = await client.readContract({
-		abi: PositionABI,
-		address: position,
-		functionName: 'availableForMinting',
-	});
+	const availableForMinting = await readWithFallback<bigint>(
+		() =>
+			client.readContract({
+				abi: PositionABI,
+				address: position,
+				functionName: 'availableForMinting',
+			}),
+		0n,
+		'position.availableForMinting'
+	);
 
 	const cooldown = await client.readContract({
 		abi: PositionABI,
@@ -155,11 +200,16 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 		functionName: 'principal',
 	});
 
-	const virtualPrice = await client.readContract({
-		abi: PositionABI,
-		address: position,
-		functionName: 'virtualPrice',
-	});
+	const virtualPrice = await readWithFallback<bigint>(
+		() =>
+			client.readContract({
+				abi: PositionABI,
+				address: position,
+				functionName: 'virtualPrice',
+			}),
+		price,
+		'position.virtualPrice'
+	);
 
 	const collateralRequirement = await client.readContract({
 		abi: PositionABI,
@@ -171,17 +221,27 @@ const positionOpenedHandler = async ({ event, context }: any) => {
 
 	// If clone, update original position
 	if (isClone) {
-		const originalAvailableForClones = await client.readContract({
-			abi: PositionABI,
-			address: original,
-			functionName: 'availableForClones',
-		});
+		const originalAvailableForClones = await readWithFallback<bigint>(
+			() =>
+				client.readContract({
+					abi: PositionABI,
+					address: original,
+					functionName: 'availableForClones',
+				}),
+			0n,
+			'original.availableForClones'
+		);
 
-		const originalAvailableForMinting = await client.readContract({
-			abi: PositionABI,
-			address: original,
-			functionName: 'availableForMinting',
-		});
+		const originalAvailableForMinting = await readWithFallback<bigint>(
+			() =>
+				client.readContract({
+					abi: PositionABI,
+					address: original,
+					functionName: 'availableForMinting',
+				}),
+			0n,
+			'original.availableForMinting'
+		);
 
 		await db.update(positionV2, { id: originalId }).set({
 			availableForClones: originalAvailableForClones,

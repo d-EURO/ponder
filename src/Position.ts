@@ -2,6 +2,7 @@ import { ponder } from 'ponder:registry';
 import { getAddress } from 'viem';
 import { PositionV2ABI as PositionABI } from '@deuro/eurocoin';
 import { positionV2, mintingUpdateV2, ecosystem, activeUser } from '../ponder.schema';
+import { readWithFallback } from './utils/rpc';
 
 const mintingUpdateHandler = async ({ event, context }: any) => {
 	const { client, db } = context;
@@ -11,16 +12,27 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 
 	const [availableForClones, availableForMinting, cooldown, fixedAnnualRatePPM, principal, virtualPrice, collateralRequirement] =
 		await Promise.all([
-			client.readContract({
-				abi: PositionABI,
-				address: positionAddress,
-				functionName: 'availableForClones',
-			}),
-			client.readContract({
-				abi: PositionABI,
-				address: positionAddress,
-				functionName: 'availableForMinting',
-			}),
+			// These position views can call collateral.balanceOf() internally, so permanent collateral failures use safe fallbacks.
+			readWithFallback<bigint>(
+				() =>
+					client.readContract({
+						abi: PositionABI,
+						address: positionAddress,
+						functionName: 'availableForClones',
+					}),
+				0n,
+				'position.availableForClones'
+			),
+			readWithFallback<bigint>(
+				() =>
+					client.readContract({
+						abi: PositionABI,
+						address: positionAddress,
+						functionName: 'availableForMinting',
+					}),
+				0n,
+				'position.availableForMinting'
+			),
 			client.readContract({
 				abi: PositionABI,
 				address: positionAddress,
@@ -36,11 +48,16 @@ const mintingUpdateHandler = async ({ event, context }: any) => {
 				address: positionAddress,
 				functionName: 'principal',
 			}),
-			client.readContract({
-				abi: PositionABI,
-				address: positionAddress,
-				functionName: 'virtualPrice',
-			}),
+			readWithFallback<bigint>(
+				() =>
+					client.readContract({
+						abi: PositionABI,
+						address: positionAddress,
+						functionName: 'virtualPrice',
+					}),
+				price,
+				'position.virtualPrice'
+			),
 			client.readContract({
 				abi: PositionABI,
 				address: positionAddress,
