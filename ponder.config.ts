@@ -91,6 +91,8 @@ export default createConfig({
 			address: ADDR.mintingHub as Address,
 			startBlock: V3_START_BLOCK,
 		},
+		// The factory start block is part of ponder's sync-cache key. Starting one block before the hub makes ponder refetch the
+		// position data once, so that positions missing from the cache written by ponder < 0.17.2 are rediscovered.
 		PositionV2: {
 			chain: chain.name,
 			abi: PositionV2ABI,
@@ -98,6 +100,7 @@ export default createConfig({
 				address: ADDR.mintingHubGateway as Address,
 				event: openPositionEvent,
 				parameter: 'position',
+				startBlock: config.startMintingHubV2 - 1,
 			}),
 			startBlock: config.startMintingHubV2,
 		},
@@ -108,6 +111,7 @@ export default createConfig({
 				address: ADDR.mintingHub as Address,
 				event: openPositionEvent,
 				parameter: 'position',
+				startBlock: V3_START_BLOCK - 1,
 			}),
 			startBlock: V3_START_BLOCK,
 		},
