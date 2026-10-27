@@ -1,5 +1,5 @@
 import { ponder } from 'ponder:registry';
-import { Address, getAddress, zeroAddress, decodeEventLog } from 'viem';
+import { getAddress, zeroAddress, decodeEventLog } from 'viem';
 import { ADDR, MINTING_HUB_ADDRESSES } from '../ponder.config';
 import { MintingHubV3ABI } from '@deuro/eurocoin';
 import {
@@ -172,10 +172,12 @@ ponder.on('Stablecoin:Transfer', async ({ event, context }) => {
 			.values({ id: event.args.to.toLowerCase(), mint: event.args.value, burn: 0n })
 			.onConflictDoUpdate((row) => ({ mint: row.mint + event.args.value }));
 
-		await db
-			.insert(activeUser)
-			.values({ id: getAddress(event.transaction.to as Address), lastActiveTime: event.block.timestamp })
-			.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
+		if (event.transaction.to) {
+			await db
+				.insert(activeUser)
+				.values({ id: getAddress(event.transaction.to), lastActiveTime: event.block.timestamp })
+				.onConflictDoUpdate(() => ({ lastActiveTime: event.block.timestamp }));
+		}
 
 		// Capture mints from position creation (V2 + V3 hubs)
 		const txTo = event.transaction.to?.toLowerCase();
